@@ -2,11 +2,32 @@ import { Component, ViewEncapsulation, OnInit, Inject, PLATFORM_ID } from '@angu
 import { Router } from '@angular/router';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { EgresadosService } from '../../services/egresados.service';
 import { CatalogosService } from '../../services/catalogos.service';
 import { CreateEgresadoEtapa2 } from '../../models/egresado.interface';
 import { CoincidenciaLaboral } from '../../models/catalogos.interface';
+
+function noCorreoInstitucional(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const valor: string = control.value ?? '';
+    if (!valor) return null;
+
+    const dominio = valor.split('@')[1] ?? '';
+
+    const dominiosInstitucionales = [
+      /\.edu\.mx$/i,
+      /\.edu$/i,
+      /\.gob\.mx$/i,
+      /\.tecnm\.mx$/i,
+      /itdurango/i,
+      /tecnologico/i,
+    ];
+
+    const esInstitucional = dominiosInstitucionales.some(regex => regex.test(dominio));
+    return esInstitucional ? { correoInstitucional: true } : null;
+  };
+}
 
 @Component({
   selector: 'app-egresados2',
@@ -35,7 +56,7 @@ export class Egresados2Component implements OnInit {
   ) {
     this.form = this.fb.group({
       // Sección 1 · Validación de identidad
-      correo: ['', [Validators.required, Validators.email]],
+      correo: ['', [Validators.required, Validators.email, noCorreoInstitucional()]],
       nombre: ['', Validators.required],
       ncontrol: ['', Validators.required],
 

@@ -74,8 +74,17 @@
                         <input type="email" id="correo" formControlName="correo" placeholder="ejemplo@correo.com"
                             autocomplete="email" />
                     </div>
-                    <span class="field-error" *ngIf="f['correo'].invalid && f['correo'].touched">
+
+                    <!-- Error: formato inválido -->
+                    <span class="field-error"
+                        *ngIf="f['correo'].touched && f['correo'].errors?.['required'] || f['correo'].touched && f['correo'].errors?.['email']">
                         Ingresa un correo electrónico válido.
+                    </span>
+
+                    <!-- Error: correo institucional -->
+                    <span class="field-error"
+                        *ngIf="f['correo'].touched && f['correo'].errors?.['correoInstitucional']">
+                        No se permite un correo institucional. Usa tu correo personal.
                     </span>
                 </div>
 

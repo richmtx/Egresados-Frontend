@@ -5,11 +5,37 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, Subject, of, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
-import { EgresadosService }  from '../../services/egresados.service';
-import { CatalogosService }  from '../../services/catalogos.service';
+import { EgresadosService } from '../../services/egresados.service';
+import { CatalogosService } from '../../services/catalogos.service';
 import { CreateEgresadoEtapa1 } from '../../models/egresado.interface';
-import { Carrera, Genero, NivelIngles, SituacionLaboral,
-  AntiguedadEmpleo, CertificacionVigente, } from '../../models/catalogos.interface';
+import {
+  Carrera, Genero, NivelIngles, SituacionLaboral,
+  AntiguedadEmpleo, CertificacionVigente,
+} from '../../models/catalogos.interface';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
+function noCorreoInstitucional(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const valor: string = control.value ?? '';
+    if (!valor) return null;
+
+    // Dominios institucionales bloqueados
+    const dominiosInstitucionales = [
+      /\.edu\.mx$/i,
+      /\.edu$/i,
+      /\.gob\.mx$/i,
+      /\.tecnm\.mx$/i,
+      /itdurango/i,
+      /tecnologico/i,
+    ];
+
+    const esInstitucional = dominiosInstitucionales.some(regex =>
+      regex.test(valor.split('@')[1] ?? '')
+    );
+
+    return esInstitucional ? { correoInstitucional: true } : null;
+  };
+}
 
 @Component({
   selector: 'app-egresados1',
@@ -22,36 +48,36 @@ import { Carrera, Genero, NivelIngles, SituacionLaboral,
 export class Egresados1Component implements OnInit, OnDestroy {
 
   form: FormGroup;
-  mostrarExito  = false;
-  enviando      = false;
-  cargando      = true;
-  errorMensaje  = '';
+  mostrarExito = false;
+  enviando = false;
+  cargando = true;
+  errorMensaje = '';
 
   // Catálogos
-  carreras:                Carrera[]              = [];
-  generos:                 Genero[]               = [];
-  nivelesIngles:           NivelIngles[]          = [];
-  situacionesLaborales:    SituacionLaboral[]     = [];
-  antiguedades:            AntiguedadEmpleo[]     = [];
+  carreras: Carrera[] = [];
+  generos: Genero[] = [];
+  nivelesIngles: NivelIngles[] = [];
+  situacionesLaborales: SituacionLaboral[] = [];
+  antiguedades: AntiguedadEmpleo[] = [];
   certificacionesVigentes: CertificacionVigente[] = [];
 
   // Autocomplete ciudad residencia 
-  sugerenciasCiudad:   string[]  = [];
-  buscandoCiudad:      boolean   = false;
-  mostrarSugerencias:  boolean   = false;
-  ciudadSinResultados: boolean   = false;
+  sugerenciasCiudad: string[] = [];
+  buscandoCiudad: boolean = false;
+  mostrarSugerencias: boolean = false;
+  ciudadSinResultados: boolean = false;
 
   // Autocomplete ciudad trabajo 
-  sugerenciasCiudadTrabajo:   string[]  = [];
-  buscandoCiudadTrabajo:      boolean   = false;
-  mostrarSugerenciasTrabajo:  boolean   = false;
-  ciudadTrabajoSinResultados: boolean   = false;
+  sugerenciasCiudadTrabajo: string[] = [];
+  buscandoCiudadTrabajo: boolean = false;
+  mostrarSugerenciasTrabajo: boolean = false;
+  ciudadTrabajoSinResultados: boolean = false;
 
-  private ciudadInput$        = new Subject<string>();
+  private ciudadInput$ = new Subject<string>();
   private ciudadTrabajoInput$ = new Subject<string>();
-  private ciudadSub!:          Subscription;
-  private ciudadTrabajoSub!:   Subscription;
-  private situacionSub!:       Subscription;
+  private ciudadSub!: Subscription;
+  private ciudadTrabajoSub!: Subscription;
+  private situacionSub!: Subscription;
 
   // Situaciones que NO están trabajando
   private readonly SITUACIONES_INACTIVAS = [
@@ -61,32 +87,32 @@ export class Egresados1Component implements OnInit, OnDestroy {
   ];
 
   constructor(
-    private fb:        FormBuilder,
-    private router:    Router,
-    private svc:       EgresadosService,
+    private fb: FormBuilder,
+    private router: Router,
+    private svc: EgresadosService,
     private catalogos: CatalogosService,
-    private http:      HttpClient,
+    private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     this.form = this.fb.group({
-      nombre:    ['', [Validators.required, Validators.minLength(3)]],
-      genero:    ['', Validators.required],
-      correo:    ['', [Validators.required, Validators.email]],
-      telefono:  ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
-      ciudad:    ['', Validators.required],
-      carrera:       ['', Validators.required],
-      anio:          ['', [Validators.required, Validators.min(1990), Validators.max(2026)]],
-      titulacion:    ['', Validators.required],
+      nombre: ['', [Validators.required, Validators.minLength(3)]],
+      genero: ['', Validators.required],
+      correo: ['', [Validators.required, Validators.email, noCorreoInstitucional()]],
+      telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      ciudad: ['', Validators.required],
+      carrera: ['', Validators.required],
+      anio: ['', [Validators.required, Validators.min(1990), Validators.max(2026)]],
+      titulacion: ['', Validators.required],
       certificacion: ['', Validators.required],
-      ingles:        ['', Validators.required],
-      situacion:     ['', Validators.required],
-      empresa:       [''],
-      antiguedad:    ['', Validators.required],
+      ingles: ['', Validators.required],
+      situacion: ['', Validators.required],
+      empresa: [''],
+      antiguedad: ['', Validators.required],
       ciudadtrabajo: [''],
-      satisfaccion:              ['', Validators.required],
+      satisfaccion: ['', Validators.required],
       autorizacion_estadisticos: [false],
-      autorizacion_contacto:     [false],
-      autorizacion_actividades:  [false],
+      autorizacion_contacto: [false],
+      autorizacion_actividades: [false],
     });
   }
 
@@ -107,24 +133,24 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
     // Carga todos los catálogos en paralelo
     forkJoin({
-      carreras:                this.catalogos.getCarreras(),
-      generos:                 this.catalogos.getGeneros(),
-      nivelesIngles:           this.catalogos.getNivelesIngles(),
-      situacionesLaborales:    this.catalogos.getSituacionesLaborales(),
-      antiguedades:            this.catalogos.getAntiguedades(),
+      carreras: this.catalogos.getCarreras(),
+      generos: this.catalogos.getGeneros(),
+      nivelesIngles: this.catalogos.getNivelesIngles(),
+      situacionesLaborales: this.catalogos.getSituacionesLaborales(),
+      antiguedades: this.catalogos.getAntiguedades(),
       certificacionesVigentes: this.catalogos.getCertificacionesVigentes(),
     }).subscribe({
       next: (data) => {
-        this.carreras                = data.carreras;
-        this.generos                 = data.generos;
-        this.nivelesIngles           = data.nivelesIngles;
-        this.situacionesLaborales    = data.situacionesLaborales;
-        this.antiguedades            = data.antiguedades;
+        this.carreras = data.carreras;
+        this.generos = data.generos;
+        this.nivelesIngles = data.nivelesIngles;
+        this.situacionesLaborales = data.situacionesLaborales;
+        this.antiguedades = data.antiguedades;
         this.certificacionesVigentes = data.certificacionesVigentes;
         this.cargando = false;
       },
       error: (err) => {
-        this.cargando     = false;
+        this.cargando = false;
         this.errorMensaje = 'Error al cargar el formulario. Recarga la página.';
         console.error('Error cargando catálogos:', err);
       },
@@ -136,12 +162,12 @@ export class Egresados1Component implements OnInit, OnDestroy {
       distinctUntilChanged(),
       switchMap(query => {
         if (!query || query.length < 2) {
-          this.sugerenciasCiudad   = [];
+          this.sugerenciasCiudad = [];
           this.ciudadSinResultados = false;
-          this.buscandoCiudad      = false;
+          this.buscandoCiudad = false;
           return of([]);
         }
-        this.buscandoCiudad      = true;
+        this.buscandoCiudad = true;
         this.ciudadSinResultados = false;
 
         const url =
@@ -157,23 +183,23 @@ export class Egresados1Component implements OnInit, OnDestroy {
       this.buscandoCiudad = false;
 
       if (!resultados || resultados.length === 0) {
-        this.sugerenciasCiudad   = [];
+        this.sugerenciasCiudad = [];
         this.ciudadSinResultados = true;
         return;
       }
 
       const etiquetas = resultados.map((r: any) => {
-        const a      = r.address || {};
+        const a = r.address || {};
         const ciudad = a.city || a.town || a.village || a.municipality
-                    || a.county || r.display_name.split(',')[0].trim();
-        const estado = a.state   || a.region  || '';
-        const pais   = a.country || '';
+          || a.county || r.display_name.split(',')[0].trim();
+        const estado = a.state || a.region || '';
+        const pais = a.country || '';
         return [ciudad, estado, pais].filter(Boolean).join(', ');
       });
 
-      this.sugerenciasCiudad   = [...new Set(etiquetas)];
+      this.sugerenciasCiudad = [...new Set(etiquetas)];
       this.ciudadSinResultados = this.sugerenciasCiudad.length === 0;
-      this.mostrarSugerencias  = true;
+      this.mostrarSugerencias = true;
     });
 
     // Pipeline autocomplete ciudad trabajo
@@ -182,12 +208,12 @@ export class Egresados1Component implements OnInit, OnDestroy {
       distinctUntilChanged(),
       switchMap(query => {
         if (!query || query.length < 2) {
-          this.sugerenciasCiudadTrabajo   = [];
+          this.sugerenciasCiudadTrabajo = [];
           this.ciudadTrabajoSinResultados = false;
-          this.buscandoCiudadTrabajo      = false;
+          this.buscandoCiudadTrabajo = false;
           return of([]);
         }
-        this.buscandoCiudadTrabajo      = true;
+        this.buscandoCiudadTrabajo = true;
         this.ciudadTrabajoSinResultados = false;
 
         const url =
@@ -203,23 +229,23 @@ export class Egresados1Component implements OnInit, OnDestroy {
       this.buscandoCiudadTrabajo = false;
 
       if (!resultados || resultados.length === 0) {
-        this.sugerenciasCiudadTrabajo   = [];
+        this.sugerenciasCiudadTrabajo = [];
         this.ciudadTrabajoSinResultados = true;
         return;
       }
 
       const etiquetas = resultados.map((r: any) => {
-        const a      = r.address || {};
+        const a = r.address || {};
         const ciudad = a.city || a.town || a.village || a.municipality
-                    || a.county || r.display_name.split(',')[0].trim();
-        const estado = a.state   || a.region  || '';
-        const pais   = a.country || '';
+          || a.county || r.display_name.split(',')[0].trim();
+        const estado = a.state || a.region || '';
+        const pais = a.country || '';
         return [ciudad, estado, pais].filter(Boolean).join(', ');
       });
 
-      this.sugerenciasCiudadTrabajo   = [...new Set(etiquetas)];
+      this.sugerenciasCiudadTrabajo = [...new Set(etiquetas)];
       this.ciudadTrabajoSinResultados = this.sugerenciasCiudadTrabajo.length === 0;
-      this.mostrarSugerenciasTrabajo  = true;
+      this.mostrarSugerenciasTrabajo = true;
     });
 
     // Escucha cambios en situación laboral
@@ -235,9 +261,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
           this.form.get('antiguedad')!.clearValidators();
 
           // Cierra ambos autocompletes
-          this.sugerenciasCiudad        = [];
-          this.mostrarSugerencias       = false;
-          this.sugerenciasCiudadTrabajo  = [];
+          this.sugerenciasCiudad = [];
+          this.mostrarSugerencias = false;
+          this.sugerenciasCiudadTrabajo = [];
           this.mostrarSugerenciasTrabajo = false;
         } else {
           this.form.get('antiguedad')!.setValidators(Validators.required);
@@ -267,7 +293,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
   seleccionarCiudad(ciudad: string): void {
     this.form.get('ciudad')!.setValue(ciudad);
-    this.sugerenciasCiudad  = [];
+    this.sugerenciasCiudad = [];
     this.mostrarSugerencias = false;
   }
 
@@ -285,7 +311,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
   seleccionarCiudadTrabajo(ciudad: string): void {
     this.form.get('ciudadtrabajo')!.setValue(ciudad);
-    this.sugerenciasCiudadTrabajo  = [];
+    this.sugerenciasCiudadTrabajo = [];
     this.mostrarSugerenciasTrabajo = false;
   }
 
@@ -302,25 +328,25 @@ export class Egresados1Component implements OnInit, OnDestroy {
     const v = this.form.value;
 
     const payload: CreateEgresadoEtapa1 = {
-      nombre_completo:        v.nombre,
-      genero:                 v.genero,
-      correo:                 v.correo,
-      telefono:               v.telefono,
-      ciudad_residencia:      v.ciudad,
-      carrera:                v.carrera,
-      anio_egreso:            Number(v.anio),
-      estatus_titulacion:     v.titulacion,
-      certificacion_vigente:  v.certificacion,
-      nivel_ingles:           v.ingles,
-      situacion_laboral:      v.situacion,
-      empresa:                v.empresa       || '',
-      antiguedad_empleo:      v.antiguedad    || '',
-      ciudad_trabajo:         v.ciudadtrabajo || '',
+      nombre_completo: v.nombre,
+      genero: v.genero,
+      correo: v.correo,
+      telefono: v.telefono,
+      ciudad_residencia: v.ciudad,
+      carrera: v.carrera,
+      anio_egreso: Number(v.anio),
+      estatus_titulacion: v.titulacion,
+      certificacion_vigente: v.certificacion,
+      nivel_ingles: v.ingles,
+      situacion_laboral: v.situacion,
+      empresa: v.empresa || '',
+      antiguedad_empleo: v.antiguedad || '',
+      ciudad_trabajo: v.ciudadtrabajo || '',
       satisfaccion_formacion: Number(v.satisfaccion),
       autorizaciones: {
         estadisticas: v.autorizacion_estadisticos,
-        contacto:     v.autorizacion_contacto,
-        eventos:      v.autorizacion_actividades,
+        contacto: v.autorizacion_contacto,
+        eventos: v.autorizacion_actividades,
       },
     };
 
@@ -330,7 +356,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
       next: (resp) => {
         this.enviando = false;
         if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('id_egresado',     String(resp.id_egresado));
+          localStorage.setItem('id_egresado', String(resp.id_egresado));
           localStorage.setItem('correo_egresado', v.correo);
         }
         this.mostrarExito = true;
@@ -340,7 +366,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
         }, 1500);
       },
       error: (err) => {
-        this.enviando     = false;
+        this.enviando = false;
         this.errorMensaje = err?.error?.message || 'Ocurrió un error al guardar. Intenta de nuevo.';
         console.error('Error Etapa 1:', err);
       },

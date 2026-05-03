@@ -39,8 +39,15 @@
                         <input type="email" id="correo" formControlName="correo" placeholder="ejemplo@correo.com"
                             autocomplete="email" />
                     </div>
-                    <span class="field-error" *ngIf="f['correo'].invalid && f['correo'].touched">
+
+                    <span class="field-error"
+                        *ngIf="f['correo'].touched && (f['correo'].errors?.['required'] || f['correo'].errors?.['email'])">
                         Ingresa el correo con el que te registraste en la Etapa 1.
+                    </span>
+
+                    <span class="field-error"
+                        *ngIf="f['correo'].touched && f['correo'].errors?.['correoInstitucional']">
+                        No se permite un correo institucional. Usa tu correo personal.
                     </span>
                 </div>
 
