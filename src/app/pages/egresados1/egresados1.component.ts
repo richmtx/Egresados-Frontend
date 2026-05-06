@@ -142,7 +142,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }).subscribe({
       next: (data) => {
         this.carreras = data.carreras;
-        this.generos = data.generos;
+        this.generos = data.generos.filter(g =>
+          ['femenino', 'masculino'].includes(g.genero.toLowerCase())
+        );
         this.nivelesIngles = data.nivelesIngles;
         this.situacionesLaborales = data.situacionesLaborales;
         this.antiguedades = data.antiguedades;
