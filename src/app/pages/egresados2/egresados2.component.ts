@@ -87,13 +87,13 @@ export class Egresados2Component implements OnInit {
       col_encuestas: [false],
       col_nopuedo: [false],
       col_otro_check: [false],
-      col_otro_texto: [{ value: '', disabled: true }],  // deshabilitado por defecto
+      col_otro_texto: [{ value: '', disabled: true }],
     });
   }
 
   get f() { return this.form.controls; }
 
-  // ── Habilitar / deshabilitar campo "Otro" de Habilidades ──────
+  // Habilitar / deshabilitar campo "Otro" de Habilidades
   toggleOtroHab(): void {
     if (this.f['hab_otro_check'].value) {
       this.f['hab_otro_texto'].enable();
@@ -103,7 +103,7 @@ export class Egresados2Component implements OnInit {
     }
   }
 
-  // ── Habilitar / deshabilitar campo "Otro" de Colaboraciones ───
+  // Habilitar / deshabilitar campo "Otro" de Colaboraciones
   toggleOtroCol(): void {
     if (this.f['col_otro_check'].value) {
       this.f['col_otro_texto'].enable();
@@ -120,6 +120,11 @@ export class Egresados2Component implements OnInit {
       const correoGuardado = localStorage.getItem('correo_egresado');
       if (correoGuardado) {
         this.form.patchValue({ correo: correoGuardado });
+      }
+
+      const nombreGuardado = localStorage.getItem('nombre_egresado');
+      if (nombreGuardado) {
+        this.form.patchValue({ nombre: nombreGuardado });
       }
     }
 
@@ -202,6 +207,7 @@ export class Egresados2Component implements OnInit {
         if (isPlatformBrowser(this.platformId)) {
           localStorage.removeItem('id_egresado');
           localStorage.removeItem('correo_egresado');
+          localStorage.removeItem('nombre_egresado');
         }
         this.mostrarExito = true;
         setTimeout(() => {

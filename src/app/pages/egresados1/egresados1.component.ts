@@ -19,7 +19,6 @@ function noCorreoInstitucional(): ValidatorFn {
     const valor: string = control.value ?? '';
     if (!valor) return null;
 
-    // Dominios institucionales bloqueados
     const dominiosInstitucionales = [
       /\.edu\.mx$/i,
       /\.edu$/i,
@@ -61,17 +60,23 @@ export class Egresados1Component implements OnInit, OnDestroy {
   antiguedades: AntiguedadEmpleo[] = [];
   certificacionesVigentes: CertificacionVigente[] = [];
 
-  // Autocomplete ciudad residencia 
+  // Autocomplete ciudad residencia
   sugerenciasCiudad: string[] = [];
   buscandoCiudad: boolean = false;
   mostrarSugerencias: boolean = false;
   ciudadSinResultados: boolean = false;
 
-  // Autocomplete ciudad trabajo 
+  // Autocomplete ciudad trabajo
   sugerenciasCiudadTrabajo: string[] = [];
   buscandoCiudadTrabajo: boolean = false;
   mostrarSugerenciasTrabajo: boolean = false;
   ciudadTrabajoSinResultados: boolean = false;
+
+  // Foto de perfil
+  fotoArchivo: File | null = null;
+  fotoPreview: string | null = null;
+  modalFotoVisible = false;
+  fotoError = '';
 
   private ciudadInput$ = new Subject<string>();
   private ciudadTrabajoInput$ = new Subject<string>();
@@ -79,7 +84,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
   private ciudadTrabajoSub!: Subscription;
   private situacionSub!: Subscription;
 
-  // Situaciones que NO están trabajando
   private readonly SITUACIONES_INACTIVAS = [
     'Desempleado',
     'Estudiando Posgrado',
@@ -118,14 +122,12 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
   get f() { return this.form.controls; }
 
-  // Getter reactivo: true si el egresado está trabajando
   get estaActivo(): boolean {
     const valor = (this.form.get('situacion')?.value ?? '').toLowerCase();
     return !this.SITUACIONES_INACTIVAS.some(s => s.toLowerCase() === valor);
   }
 
-  // Ciclo de vida
-
+  //  Ciclo de vida
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -262,7 +264,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
           this.form.get('ciudadtrabajo')!.setValue('');
           this.form.get('antiguedad')!.clearValidators();
 
-          // Cierra ambos autocompletes
           this.sugerenciasCiudad = [];
           this.mostrarSugerencias = false;
           this.sugerenciasCiudadTrabajo = [];
@@ -281,7 +282,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.situacionSub?.unsubscribe();
   }
 
-  // Métodos autocomplete ciudad residencia
+  // Autocomplete ciudad residencia
 
   onCiudadInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
@@ -299,7 +300,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.mostrarSugerencias = false;
   }
 
-  // Métodos autocomplete ciudad trabajo
+  // Autocomplete ciudad trabajo
 
   onCiudadTrabajoInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
@@ -317,7 +318,62 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.mostrarSugerenciasTrabajo = false;
   }
 
+  // Foto de perfil
+
+  abrirModalFoto(): void {
+    this.fotoError = '';
+    this.modalFotoVisible = true;
+  }
+
+  cerrarModalFoto(): void {
+    this.modalFotoVisible = false;
+    this.fotoError = '';
+  }
+
+  onFotoSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    this.fotoError = '';
+
+    if (!archivo) return;
+
+    // Validar tipo
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!tiposPermitidos.includes(archivo.type)) {
+      this.fotoError = 'Solo se permiten imágenes JPG, PNG o WEBP.';
+      input.value = '';
+      return;
+    }
+
+    // Validar tamaño (máx. 2 MB)
+    const maxBytes = 2 * 1024 * 1024;
+    if (archivo.size > maxBytes) {
+      this.fotoError = 'La imagen no debe superar los 2 MB.';
+      input.value = '';
+      return;
+    }
+
+    this.fotoArchivo = archivo;
+
+    // Generar preview y cerrar modal
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.fotoPreview = e.target?.result as string;
+      this.cerrarModalFoto();
+    };
+    reader.readAsDataURL(archivo);
+
+    input.value = ''; // Permite volver a seleccionar el mismo archivo
+  }
+
+  quitarFoto(): void {
+    this.fotoArchivo = null;
+    this.fotoPreview = null;
+    this.fotoError = '';
+  }
+
   // Submit
+
   onSubmit(): void {
     this.form.markAllAsTouched();
     this.errorMensaje = '';
@@ -354,24 +410,42 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
     this.enviando = true;
 
-    this.svc.enviarEtapa1(payload).subscribe({
-      next: (resp) => {
-        this.enviando = false;
-        if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('id_egresado', String(resp.id_egresado));
-          localStorage.setItem('correo_egresado', v.correo);
-        }
-        this.mostrarExito = true;
-        setTimeout(() => {
-          this.mostrarExito = false;
-          this.router.navigate(['/egresados2']);
-        }, 1500);
-      },
-      error: (err) => {
-        this.enviando = false;
-        this.errorMensaje = err?.error?.message || 'Ocurrió un error al guardar. Intenta de nuevo.';
-        console.error('Error Etapa 1:', err);
-      },
-    });
+    if (this.fotoArchivo) {
+      // Enviar como multipart/form-data cuando hay foto
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(payload));
+      formData.append('foto', this.fotoArchivo, this.fotoArchivo.name);
+
+      this.svc.enviarEtapa1ConFoto(formData).subscribe({
+        next: (resp) => this.handleSuccess(resp, v.correo),
+        error: (err) => this.handleError(err),
+      });
+    } else {
+      // Enviar como JSON cuando no hay foto
+      this.svc.enviarEtapa1(payload).subscribe({
+        next: (resp) => this.handleSuccess(resp, v.correo),
+        error: (err) => this.handleError(err),
+      });
+    }
+  }
+
+  private handleSuccess(resp: any, correo: string): void {
+    this.enviando = false;
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('id_egresado', String(resp.id_egresado));
+      localStorage.setItem('correo_egresado', correo);
+      localStorage.setItem('nombre_egresado', this.form.value.nombre);
+    }
+    this.mostrarExito = true;
+    setTimeout(() => {
+      this.mostrarExito = false;
+      this.router.navigate(['/egresados2']);
+    }, 1500);
+  }
+
+  private handleError(err: any): void {
+    this.enviando = false;
+    this.errorMensaje = err?.error?.message || 'Ocurrió un error al guardar. Intenta de nuevo.';
+    console.error('Error Etapa 1:', err);
   }
 }

@@ -19,6 +19,13 @@ export class EgresadosService {
     );
   }
 
+  enviarEtapa1ConFoto(formData: FormData): Observable<RespuestaEtapa1> {
+    return this.http.post<RespuestaEtapa1>(
+      `${this.API}/egresados/etapa1`,
+      formData,
+    );
+  }
+
   enviarEtapa2(
     idEgresado: number,
     datos: CreateEgresadoEtapa2,
