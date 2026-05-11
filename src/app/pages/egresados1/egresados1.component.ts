@@ -1,4 +1,7 @@
-import { Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID, } from '@angular/core';
+import {
+  Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID,
+  ViewChild, ElementRef,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -46,6 +49,10 @@ function noCorreoInstitucional(): ValidatorFn {
 })
 export class Egresados1Component implements OnInit, OnDestroy {
 
+  // ── ViewChild para cámara desktop — deben estar DENTRO de la clase ──────────
+  @ViewChild('videoRef') videoRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('canvasRef') canvasRef!: ElementRef<HTMLCanvasElement>;
+
   form: FormGroup;
   mostrarExito = false;
   enviando = false;
@@ -75,8 +82,13 @@ export class Egresados1Component implements OnInit, OnDestroy {
   // Foto de perfil
   fotoArchivo: File | null = null;
   fotoPreview: string | null = null;
-  modalFotoVisible = false;
-  fotoError = '';
+  modalFotoVisible: boolean = false;
+  fotoError: string = '';
+
+  // Cámara desktop
+  camaraActiva: boolean = false;
+  camaraError: string = '';
+  private stream: MediaStream | null = null;
 
   private ciudadInput$ = new Subject<string>();
   private ciudadTrabajoInput$ = new Subject<string>();
@@ -127,13 +139,13 @@ export class Egresados1Component implements OnInit, OnDestroy {
     return !this.SITUACIONES_INACTIVAS.some(s => s.toLowerCase() === valor);
   }
 
-  //  Ciclo de vida
+  // ─── Ciclo de vida ───────────────────────────────────────────────────────────
+
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Carga todos los catálogos en paralelo
     forkJoin({
       carreras: this.catalogos.getCarreras(),
       generos: this.catalogos.getGeneros(),
@@ -280,9 +292,10 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.ciudadSub?.unsubscribe();
     this.ciudadTrabajoSub?.unsubscribe();
     this.situacionSub?.unsubscribe();
+    this.cerrarCamaraDesktop(); // libera stream si el componente se destruye
   }
 
-  // Autocomplete ciudad residencia
+  // ─── Autocomplete ciudad residencia ─────────────────────────────────────────
 
   onCiudadInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
@@ -300,7 +313,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.mostrarSugerencias = false;
   }
 
-  // Autocomplete ciudad trabajo
+  // ─── Autocomplete ciudad trabajo ────────────────────────────────────────────
 
   onCiudadTrabajoInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
@@ -318,7 +331,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.mostrarSugerenciasTrabajo = false;
   }
 
-  // Foto de perfil
+  // ─── Foto de perfil ─────────────────────────────────────────────────────────
 
   abrirModalFoto(): void {
     this.fotoError = '';
@@ -326,6 +339,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
   }
 
   cerrarModalFoto(): void {
+    this.cerrarCamaraDesktop();   // detiene stream si está activo
     this.modalFotoVisible = false;
     this.fotoError = '';
   }
@@ -337,7 +351,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
     if (!archivo) return;
 
-    // Validar tipo
     const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
     if (!tiposPermitidos.includes(archivo.type)) {
       this.fotoError = 'Solo se permiten imágenes JPG, PNG o WEBP.';
@@ -345,7 +358,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
       return;
     }
 
-    // Validar tamaño (máx. 2 MB)
     const maxBytes = 2 * 1024 * 1024;
     if (archivo.size > maxBytes) {
       this.fotoError = 'La imagen no debe superar los 2 MB.';
@@ -355,7 +367,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
     this.fotoArchivo = archivo;
 
-    // Generar preview y cerrar modal
     const reader = new FileReader();
     reader.onload = (e) => {
       this.fotoPreview = e.target?.result as string;
@@ -363,7 +374,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     };
     reader.readAsDataURL(archivo);
 
-    input.value = ''; // Permite volver a seleccionar el mismo archivo
+    input.value = '';
   }
 
   quitarFoto(): void {
@@ -372,7 +383,78 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.fotoError = '';
   }
 
-  // Submit
+  // ─── Cámara desktop (getUserMedia) ──────────────────────────────────────────
+
+  esMobile(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  }
+
+  async abrirCamaraDesktop(): Promise<void> {
+    this.camaraError = '';
+    this.camaraActiva = true;
+
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+
+      // Espera a que Angular renderice el <video> antes de asignar el stream
+      setTimeout(() => {
+        if (this.videoRef?.nativeElement && this.stream) {
+          this.videoRef.nativeElement.srcObject = this.stream;
+        }
+      }, 100);
+
+    } catch (err: any) {
+      this.camaraError =
+        err?.name === 'NotAllowedError'
+          ? 'Permiso de cámara denegado. Habilítalo en la configuración del navegador.'
+          : 'No se pudo acceder a la cámara.';
+    }
+  }
+
+  capturarFoto(): void {
+    const video = this.videoRef?.nativeElement;
+    const canvas = this.canvasRef?.nativeElement;
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob: Blob | null) => {
+      if (!blob) return;
+
+      const archivo = new File([blob], `foto-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      this.fotoArchivo = archivo;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.fotoPreview = e.target?.result as string;
+        this.cerrarCamaraDesktop();
+        this.cerrarModalFoto();
+      };
+      reader.readAsDataURL(archivo);
+
+    }, 'image/jpeg', 0.92);
+  }
+
+  cerrarCamaraDesktop(): void {
+    this.camaraActiva = false;
+    this.camaraError = '';
+    if (this.stream) {
+      this.stream.getTracks().forEach(t => t.stop());
+      this.stream = null;
+    }
+  }
+
+  // ─── Submit ─────────────────────────────────────────────────────────────────
 
   onSubmit(): void {
     this.form.markAllAsTouched();
@@ -384,6 +466,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }
 
     const v = this.form.value;
+    const inactivo = !this.estaActivo;
 
     const payload: CreateEgresadoEtapa1 = {
       nombre_completo: v.nombre,
@@ -397,9 +480,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
       certificacion_vigente: v.certificacion,
       nivel_ingles: v.ingles,
       situacion_laboral: v.situacion,
-      empresa: v.empresa || '',
-      antiguedad_empleo: v.antiguedad || '',
-      ciudad_trabajo: v.ciudadtrabajo || '',
+      empresa: inactivo ? '' : (v.empresa || ''),
+      antiguedad_empleo: inactivo ? '' : (v.antiguedad || ''),
+      ciudad_trabajo: inactivo ? '' : (v.ciudadtrabajo || ''),
       satisfaccion_formacion: Number(v.satisfaccion),
       autorizaciones: {
         estadisticas: v.autorizacion_estadisticos,
@@ -411,20 +494,18 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.enviando = true;
 
     if (this.fotoArchivo) {
-      // Enviar como multipart/form-data cuando hay foto
       const formData = new FormData();
       formData.append('data', JSON.stringify(payload));
       formData.append('foto', this.fotoArchivo, this.fotoArchivo.name);
 
       this.svc.enviarEtapa1ConFoto(formData).subscribe({
-        next: (resp) => this.handleSuccess(resp, v.correo),
-        error: (err) => this.handleError(err),
+        next: (resp: any) => this.handleSuccess(resp, v.correo),
+        error: (err: any) => this.handleError(err),
       });
     } else {
-      // Enviar como JSON cuando no hay foto
       this.svc.enviarEtapa1(payload).subscribe({
-        next: (resp) => this.handleSuccess(resp, v.correo),
-        error: (err) => this.handleError(err),
+        next: (resp: any) => this.handleSuccess(resp, v.correo),
+        error: (err: any) => this.handleError(err),
       });
     }
   }
@@ -443,9 +524,23 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }, 1500);
   }
 
+  // ✅ DESPUÉS — extrae el mensaje sin importar la forma del error
   private handleError(err: any): void {
     this.enviando = false;
-    this.errorMensaje = err?.error?.message || 'Ocurrió un error al guardar. Intenta de nuevo.';
+
+    const errBody = err?.error;
+    if (typeof errBody === 'string') {
+      this.errorMensaje = errBody;
+    } else if (typeof errBody === 'object' && errBody !== null) {
+      // NestJS/Express suelen devolver { message: '...' } o { errors: [...] }
+      this.errorMensaje =
+        errBody.message ??
+        (Array.isArray(errBody.errors) ? errBody.errors.join(', ') : null) ??
+        JSON.stringify(errBody);
+    } else {
+      this.errorMensaje = 'Ocurrió un error al guardar. Intenta de nuevo.';
+    }
+
     console.error('Error Etapa 1:', err);
   }
 }
