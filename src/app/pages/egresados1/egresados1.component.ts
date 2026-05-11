@@ -49,7 +49,7 @@ function noCorreoInstitucional(): ValidatorFn {
 })
 export class Egresados1Component implements OnInit, OnDestroy {
 
-  // ── ViewChild para cámara desktop — deben estar DENTRO de la clase ──────────
+  // ViewChild para cámara desktop — deben estar DENTRO de la clase
   @ViewChild('videoRef') videoRef!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasRef') canvasRef!: ElementRef<HTMLCanvasElement>;
 
@@ -139,7 +139,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     return !this.SITUACIONES_INACTIVAS.some(s => s.toLowerCase() === valor);
   }
 
-  // ─── Ciclo de vida ───────────────────────────────────────────────────────────
+  // Ciclo de vida
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
@@ -292,10 +292,10 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.ciudadSub?.unsubscribe();
     this.ciudadTrabajoSub?.unsubscribe();
     this.situacionSub?.unsubscribe();
-    this.cerrarCamaraDesktop(); // libera stream si el componente se destruye
+    this.cerrarCamaraDesktop();
   }
 
-  // ─── Autocomplete ciudad residencia ─────────────────────────────────────────
+  // Autocomplete ciudad residencia
 
   onCiudadInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
@@ -313,7 +313,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.mostrarSugerencias = false;
   }
 
-  // ─── Autocomplete ciudad trabajo ────────────────────────────────────────────
+  // Autocomplete ciudad trabajo
 
   onCiudadTrabajoInput(event: Event): void {
     const valor = (event.target as HTMLInputElement).value;
@@ -331,7 +331,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.mostrarSugerenciasTrabajo = false;
   }
 
-  // ─── Foto de perfil ─────────────────────────────────────────────────────────
+  // Foto de perfil
 
   abrirModalFoto(): void {
     this.fotoError = '';
@@ -383,7 +383,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.fotoError = '';
   }
 
-  // ─── Cámara desktop (getUserMedia) ──────────────────────────────────────────
+  // Cámara desktop (getUserMedia)
 
   esMobile(): boolean {
     if (typeof navigator === 'undefined') return false;
@@ -403,11 +403,15 @@ export class Egresados1Component implements OnInit, OnDestroy {
       // Espera a que Angular renderice el <video> antes de asignar el stream
       setTimeout(() => {
         if (this.videoRef?.nativeElement && this.stream) {
-          this.videoRef.nativeElement.srcObject = this.stream;
+          const video = this.videoRef.nativeElement;
+          video.srcObject = this.stream;
+          // Asegura que el video esté reproduciéndose
+          video.play().catch(() => { });
         }
-      }, 100);
+      }, 150);
 
     } catch (err: any) {
+      this.camaraActiva = false;
       this.camaraError =
         err?.name === 'NotAllowedError'
           ? 'Permiso de cámara denegado. Habilítalo en la configuración del navegador.'
@@ -418,7 +422,14 @@ export class Egresados1Component implements OnInit, OnDestroy {
   capturarFoto(): void {
     const video = this.videoRef?.nativeElement;
     const canvas = this.canvasRef?.nativeElement;
-    if (!video || !canvas) return;
+
+    // Protección: si el video no tiene dimensiones aún, abortar
+    if (!video || !canvas || video.videoWidth === 0 || video.readyState < 2) {
+      this.camaraError = 'La cámara aún no está lista. Espera un momento.';
+      return;
+    }
+
+    this.camaraError = '';
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -426,10 +437,23 @@ export class Egresados1Component implements OnInit, OnDestroy {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Dibuja el frame actual en el canvas MIENTRAS el stream sigue activo
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    // Ahora sí detener el stream (la imagen ya está en el canvas)
+    if (this.stream) {
+      this.stream.getTracks().forEach(t => t.stop());
+      this.stream = null;
+    }
+
+    // Ocultar video para que no se vea negro
+    this.camaraActiva = false;
+
     canvas.toBlob((blob: Blob | null) => {
-      if (!blob) return;
+      if (!blob) {
+        this.camaraError = 'No se pudo capturar la imagen. Intenta de nuevo.';
+        return;
+      }
 
       const archivo = new File([blob], `foto-${Date.now()}.jpg`, { type: 'image/jpeg' });
       this.fotoArchivo = archivo;
@@ -437,8 +461,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
       const reader = new FileReader();
       reader.onload = (e) => {
         this.fotoPreview = e.target?.result as string;
-        this.cerrarCamaraDesktop();
-        this.cerrarModalFoto();
+        // cerrarModalFoto ya no necesita detener stream (ya está detenido)
+        this.modalFotoVisible = false;
+        this.fotoError = '';
       };
       reader.readAsDataURL(archivo);
 
@@ -454,7 +479,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }
   }
 
-  // ─── Submit ─────────────────────────────────────────────────────────────────
+  // Submit
 
   onSubmit(): void {
     this.form.markAllAsTouched();
@@ -524,7 +549,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }, 1500);
   }
 
-  // ✅ DESPUÉS — extrae el mensaje sin importar la forma del error
   private handleError(err: any): void {
     this.enviando = false;
 
@@ -532,7 +556,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
     if (typeof errBody === 'string') {
       this.errorMensaje = errBody;
     } else if (typeof errBody === 'object' && errBody !== null) {
-      // NestJS/Express suelen devolver { message: '...' } o { errors: [...] }
       this.errorMensaje =
         errBody.message ??
         (Array.isArray(errBody.errors) ? errBody.errors.join(', ') : null) ??
