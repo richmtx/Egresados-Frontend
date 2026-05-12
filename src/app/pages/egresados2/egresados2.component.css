@@ -25,7 +25,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 0 0 4rem;
+  padding: 0;
   color: var(--texto);
 }
 
@@ -1050,4 +1050,15 @@ input.ng-invalid.ng-touched {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--guinda);
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  font-size: 12px;
+  padding: 20px 24px;
+  letter-spacing: 0.03em;
+  margin-top: 60px;
 }

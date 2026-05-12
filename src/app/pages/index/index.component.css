@@ -139,6 +139,13 @@ body {
     transform: scale(1.6);
 }
 
+.logo-slot--cit img {
+    padding: 0;
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.0); /* Ajusta este valor hasta que se vea bien */
+}
+
 .logo-divider {
     width: 1px;
     height: 40px;
