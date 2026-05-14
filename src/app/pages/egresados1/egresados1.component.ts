@@ -1,6 +1,6 @@
 import {
   Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID,
-  ViewChild, ElementRef,
+  ViewChild, ElementRef, ChangeDetectorRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
@@ -90,6 +90,10 @@ export class Egresados1Component implements OnInit, OnDestroy {
   camaraError: string = '';
   private stream: MediaStream | null = null;
 
+  // Foto capturada pendiente de confirmar (solo cámara desktop)
+  fotoCapturadaPreview: string | null = null;
+  fotoCapturadaBlob: Blob | null = null;
+
   private ciudadInput$ = new Subject<string>();
   private ciudadTrabajoInput$ = new Subject<string>();
   private ciudadSub!: Subscription;
@@ -108,6 +112,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     private svc: EgresadosService,
     private catalogos: CatalogosService,
     private http: HttpClient,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     this.form = this.fb.group({
@@ -332,14 +337,15 @@ export class Egresados1Component implements OnInit, OnDestroy {
   }
 
   // Foto de perfil
-
   abrirModalFoto(): void {
     this.fotoError = '';
     this.modalFotoVisible = true;
   }
 
   cerrarModalFoto(): void {
-    this.cerrarCamaraDesktop();   // detiene stream si está activo
+    this.cerrarCamaraDesktop();
+    this.fotoCapturadaPreview = null;
+    this.fotoCapturadaBlob = null;
     this.modalFotoVisible = false;
     this.fotoError = '';
   }
@@ -384,7 +390,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
   }
 
   // Cámara desktop (getUserMedia)
-
   esMobile(): boolean {
     if (typeof navigator === 'undefined') return false;
     return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
@@ -423,51 +428,70 @@ export class Egresados1Component implements OnInit, OnDestroy {
     const video = this.videoRef?.nativeElement;
     const canvas = this.canvasRef?.nativeElement;
 
-    // Protección: si el video no tiene dimensiones aún, abortar
     if (!video || !canvas || video.videoWidth === 0 || video.readyState < 2) {
       this.camaraError = 'La cámara aún no está lista. Espera un momento.';
       return;
     }
 
     this.camaraError = '';
-
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Dibuja el frame actual en el canvas MIENTRAS el stream sigue activo
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Ahora sí detener el stream (la imagen ya está en el canvas)
+    // Detener stream ANTES de leer el blob
     if (this.stream) {
       this.stream.getTracks().forEach(t => t.stop());
       this.stream = null;
     }
-
-    // Ocultar video para que no se vea negro
     this.camaraActiva = false;
 
     canvas.toBlob((blob: Blob | null) => {
       if (!blob) {
         this.camaraError = 'No se pudo capturar la imagen. Intenta de nuevo.';
+        this.cdr.detectChanges();
         return;
       }
 
-      const archivo = new File([blob], `foto-${Date.now()}.jpg`, { type: 'image/jpeg' });
-      this.fotoArchivo = archivo;
+      this.fotoCapturadaBlob = blob;
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        this.fotoPreview = e.target?.result as string;
-        // cerrarModalFoto ya no necesita detener stream (ya está detenido)
-        this.modalFotoVisible = false;
-        this.fotoError = '';
+        this.fotoCapturadaPreview = e.target?.result as string;
+        this.cdr.detectChanges();
       };
-      reader.readAsDataURL(archivo);
+      reader.readAsDataURL(blob);
 
     }, 'image/jpeg', 0.92);
+  }
+
+  confirmarFotoCapturada(): void {
+    if (!this.fotoCapturadaBlob || !this.fotoCapturadaPreview) return;
+
+    const archivo = new File(
+      [this.fotoCapturadaBlob],
+      `foto-${Date.now()}.jpg`,
+      { type: 'image/jpeg' }
+    );
+
+    this.fotoArchivo = archivo;
+    this.fotoPreview = this.fotoCapturadaPreview;
+
+    // Limpiar temporales y cerrar todo
+    this.fotoCapturadaPreview = null;
+    this.fotoCapturadaBlob = null;
+    this.cerrarCamaraDesktop();
+    this.modalFotoVisible = false;
+    this.fotoError = '';
+  }
+
+  descartarFotoCapturada(): void {
+    this.cerrarCamaraDesktop();
+    this.fotoCapturadaPreview = null;
+    this.fotoCapturadaBlob = null;
   }
 
   cerrarCamaraDesktop(): void {

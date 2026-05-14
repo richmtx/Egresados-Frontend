@@ -193,7 +193,9 @@
                 <div class="modal-foto" (click)="$event.stopPropagation()">
 
                     <div class="modal-header">
-                        <h3>Agregar foto de perfil</h3>
+                        <h3>
+                            {{ fotoCapturadaPreview ? 'Confirmar foto' : 'Agregar foto de perfil' }}
+                        </h3>
                         <button type="button" class="modal-close" (click)="cerrarModalFoto()">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -203,10 +205,10 @@
                         </button>
                     </div>
 
-                    <p class="modal-subtitle">Selecciona cómo deseas agregar tu foto</p>
+                    <!-- ── Vista: opciones (galería / cámara) ── -->
+                    <ng-container *ngIf="!camaraActiva && !fotoCapturadaPreview">
+                        <p class="modal-subtitle">Selecciona cómo deseas agregar tu foto</p>
 
-                    <!-- Vista normal: opciones de selección -->
-                    <ng-container *ngIf="!camaraActiva">
                         <div class="modal-opciones">
 
                             <!-- Galería -->
@@ -225,7 +227,7 @@
                                     style="display:none" (change)="onFotoSeleccionada($event)" />
                             </label>
 
-                            <!-- Cámara: móvil usa input capture, desktop usa getUserMedia -->
+                            <!-- Cámara móvil -->
                             <label class="modal-opcion" for="inputFotoCamera" *ngIf="esMobile()">
                                 <div class="modal-opcion-icon modal-opcion-icon--camara">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -241,7 +243,7 @@
                                     style="display:none" (change)="onFotoSeleccionada($event)" />
                             </label>
 
-                            <!-- Cámara desktop: abre getUserMedia -->
+                            <!-- Cámara desktop -->
                             <div class="modal-opcion" (click)="abrirCamaraDesktop()" *ngIf="!esMobile()">
                                 <div class="modal-opcion-icon modal-opcion-icon--camara">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -256,10 +258,16 @@
                             </div>
 
                         </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn-modal-cancelar" (click)="cerrarModalFoto()">
+                                Cancelar
+                            </button>
+                        </div>
                     </ng-container>
 
-                    <!-- Vista cámara desktop -->
-                    <ng-container *ngIf="camaraActiva">
+                    <!-- ── Vista: cámara activa ── -->
+                    <ng-container *ngIf="camaraActiva && !fotoCapturadaPreview">
                         <div class="camara-wrap">
                             <video #videoRef autoplay playsinline class="camara-video"></video>
                             <canvas #canvasRef style="display:none"></canvas>
@@ -280,15 +288,36 @@
                         </div>
                     </ng-container>
 
+                    <!-- ── Vista: confirmación de foto capturada ── -->
+                    <ng-container *ngIf="fotoCapturadaPreview">
+                        <p class="modal-subtitle">¿Usar esta foto como tu foto de perfil?</p>
+
+                        <div class="foto-confirmacion-wrap">
+                            <img [src]="fotoCapturadaPreview" alt="Vista previa" class="foto-confirmacion-img" />
+                        </div>
+
+                        <div class="camara-acciones">
+                            <button type="button" class="btn-capturar" (click)="confirmarFotoCapturada()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5" width="18" height="18">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                Usar esta foto
+                            </button>
+                            <button type="button" class="btn-modal-cancelar" (click)="descartarFotoCapturada()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="1 4 1 10 7 10" />
+                                    <path d="M3.51 15a9 9 0 1 0 .49-4" />
+                                </svg>
+                                Tomar otra
+                            </button>
+                        </div>
+                    </ng-container>
+
                     <!-- Error de validación -->
                     <div class="modal-error" *ngIf="fotoError">
                         <span>{{ fotoError }}</span>
-                    </div>
-
-                    <div class="modal-footer" *ngIf="!camaraActiva">
-                        <button type="button" class="btn-modal-cancelar" (click)="cerrarModalFoto()">
-                            Cancelar
-                        </button>
                     </div>
 
                 </div>

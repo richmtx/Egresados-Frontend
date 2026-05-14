@@ -1279,6 +1279,22 @@ input.ng-invalid.ng-touched {
   opacity: 0.9;
 }
 
+/* Confirmación foto capturada */
+.foto-confirmacion-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.foto-confirmacion-img {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--color-primary, #6b2d5e);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
 /* ── FOOTER ── */
 .footer {
   background: var(--guinda);
