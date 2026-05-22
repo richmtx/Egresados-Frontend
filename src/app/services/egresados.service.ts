@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment'; 
 import { CreateEgresadoEtapa1, CreateEgresadoEtapa2, RespuestaEtapa1, } from '../models/egresado.interface';
 
 @Injectable({
@@ -8,7 +9,7 @@ import { CreateEgresadoEtapa1, CreateEgresadoEtapa2, RespuestaEtapa1, } from '..
 })
 export class EgresadosService {
 
-  private readonly API = 'http://localhost:3000';
+  private readonly API = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

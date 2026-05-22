@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment'; 
 import { Carrera, Genero, NivelIngles, SituacionLaboral, AntiguedadEmpleo, CertificacionVigente,
   CoincidenciaLaboral,
 } from '../models/catalogos.interface';
@@ -8,7 +9,7 @@ import { Carrera, Genero, NivelIngles, SituacionLaboral, AntiguedadEmpleo, Certi
 @Injectable({ providedIn: 'root' })
 export class CatalogosService {
 
-  private readonly API = 'http://localhost:3000';
+  private readonly API = environment.apiUrl; 
 
   constructor(private http: HttpClient) {}
 
