@@ -647,7 +647,7 @@
                     <div class="question-label">
                         <span class="q-num">2</span>
                         <div class="q-text">Autorización de Datos — Aviso de Privacidad <span class="req">*</span>
-                            <span class="q-note">Puedes seleccionar una o más opciones</span>
+                            <span class="q-note">Selecciona al menos una opción</span>
                         </div>
                     </div>
                     <div class="checkbox-group">
@@ -665,6 +665,11 @@
                                 institucionales</label>
                         </div>
                     </div>
+
+                    <!-- Mensaje de error -->
+                    <span class="field-error" *ngIf="autorizacionInvalida">
+                        Debes seleccionar al menos una autorización.
+                    </span>
                 </div>
 
             </div>

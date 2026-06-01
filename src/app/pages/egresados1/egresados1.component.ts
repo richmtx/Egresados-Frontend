@@ -1,7 +1,5 @@
-import {
-  Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID,
-  ViewChild, ElementRef, ChangeDetectorRef,
-} from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID,
+  ViewChild, ElementRef, ChangeDetectorRef, } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -34,8 +32,17 @@ function noCorreoInstitucional(): ValidatorFn {
     const esInstitucional = dominiosInstitucionales.some(regex =>
       regex.test(valor.split('@')[1] ?? '')
     );
-
     return esInstitucional ? { correoInstitucional: true } : null;
+  };
+}
+
+function alMenosUnaAutorizacion(): ValidatorFn {
+  return (group: AbstractControl): ValidationErrors | null => {
+    const estadisticos = group.get('autorizacion_estadisticos')?.value;
+    const contacto = group.get('autorizacion_contacto')?.value;
+    const actividades = group.get('autorizacion_actividades')?.value;
+    const algunaMarcada = estadisticos || contacto || actividades;
+    return algunaMarcada ? null : { autorizacionRequerida: true };
   };
 }
 
@@ -134,10 +141,18 @@ export class Egresados1Component implements OnInit, OnDestroy {
       autorizacion_estadisticos: [false],
       autorizacion_contacto: [false],
       autorizacion_actividades: [false],
-    });
+    }, { validators: alMenosUnaAutorizacion() });
   }
 
   get f() { return this.form.controls; }
+
+  get autorizacionInvalida(): boolean {
+    return this.form.hasError('autorizacionRequerida') &&
+      (this.form.get('autorizacion_estadisticos')!.touched ||
+        this.form.get('autorizacion_contacto')!.touched ||
+        this.form.get('autorizacion_actividades')!.touched ||
+        this.form.touched);
+  }
 
   get estaActivo(): boolean {
     const valor = (this.form.get('situacion')?.value ?? '').toLowerCase();
