@@ -1,5 +1,7 @@
-import { Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID,
-  ViewChild, ElementRef, ChangeDetectorRef, } from '@angular/core';
+import {
+  Component, ViewEncapsulation, OnInit, OnDestroy, Inject, PLATFORM_ID,
+  ViewChild, ElementRef, ChangeDetectorRef,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -148,10 +150,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
   get autorizacionInvalida(): boolean {
     return this.form.hasError('autorizacionRequerida') &&
-      (this.form.get('autorizacion_estadisticos')!.touched ||
-        this.form.get('autorizacion_contacto')!.touched ||
-        this.form.get('autorizacion_actividades')!.touched ||
-        this.form.touched);
+      (this.form.get('autorizacion_estadisticos')!.touched &&
+        this.form.get('autorizacion_contacto')!.touched &&
+        this.form.get('autorizacion_actividades')!.touched);
   }
 
   get estaActivo(): boolean {
