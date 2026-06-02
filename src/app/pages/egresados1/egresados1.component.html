@@ -374,12 +374,14 @@
                         <span class="q-num">2</span>
                         <label class="q-text" for="anio">Año de Egreso <span class="req">*</span></label>
                     </div>
+
                     <div class="field-wrap">
-                        <input type="number" id="anio" formControlName="anio" placeholder="Ej. 2021" min="1990"
-                            max="2026" step="1" />
+                        <input type="number" id="anio" formControlName="anio" placeholder="Ej. 2021" min="1948"
+                            [max]="currentYear" step="1" />
                     </div>
+
                     <span class="field-error" *ngIf="f['anio'].invalid && f['anio'].touched">
-                        Ingresa un año válido (1990–2026).
+                        Ingresa un año válido (1948–{{ currentYear }}).
                     </span>
                 </div>
 

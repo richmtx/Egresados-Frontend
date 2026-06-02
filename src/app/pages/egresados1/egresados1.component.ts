@@ -131,7 +131,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
       telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       ciudad: ['', Validators.required],
       carrera: ['', Validators.required],
-      anio: ['', [Validators.required, Validators.min(1990), Validators.max(2026)]],
+      anio: ['', [Validators.required, Validators.min(1948), Validators.max(this.currentYear)]],
       titulacion: ['', Validators.required],
       certificacion: ['', Validators.required],
       ingles: ['', Validators.required],
@@ -145,6 +145,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
       autorizacion_actividades: [false],
     }, { validators: alMenosUnaAutorizacion() });
   }
+
+  // Año máximo dinámico — se actualiza solo cada vez que se carga la app
+  currentYear: number = new Date().getFullYear();
 
   get f() { return this.form.controls; }
 
