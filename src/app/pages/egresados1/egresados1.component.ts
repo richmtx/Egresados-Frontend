@@ -68,6 +68,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
   cargando = true;
   errorMensaje = '';
 
+  correoYaRegistrado = false;
+  verificandoCorreo = false;
+
   // Catálogos
   carreras: Carrera[] = [];
   generos: Genero[] = [];
@@ -528,6 +531,11 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.form.markAllAsTouched();
     this.errorMensaje = '';
 
+    if (this.correoYaRegistrado) {
+      this.errorMensaje = 'Ya tenemos registradas tus respuestas. Si necesitas corregir algún dato, comunícate con vinculación.';
+      return;
+    }
+
     if (this.form.invalid) {
       this.errorMensaje = 'Por favor completa todos los campos obligatorios.';
       return;
@@ -576,6 +584,31 @@ export class Egresados1Component implements OnInit, OnDestroy {
         error: (err: any) => this.handleError(err),
       });
     }
+  }
+
+  verificarCorreo(): void {
+    const control = this.f['correo'];
+
+    // Solo verificamos si el correo tiene formato válido
+    if (control.invalid || !control.value) {
+      this.correoYaRegistrado = false;
+      return;
+    }
+
+    this.verificandoCorreo = true;
+    this.svc.buscarPorCorreo(control.value).subscribe({
+      next: (resp) => {
+        this.verificandoCorreo = false;
+        // Solo bloqueamos si el registro ya está COMPLETO.
+        // Si está a medias o no existe, lo dejamos continuar.
+        this.correoYaRegistrado = !!resp && resp.registro_completo === true;
+      },
+      error: () => {
+        // Si la verificación falla, no bloqueamos; el candado del backend es la red de seguridad.
+        this.verificandoCorreo = false;
+        this.correoYaRegistrado = false;
+      },
+    });
   }
 
   private handleSuccess(resp: any, correo: string): void {

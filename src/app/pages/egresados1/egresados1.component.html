@@ -72,7 +72,7 @@
                     </div>
                     <div class="field-wrap">
                         <input type="email" id="correo" formControlName="correo" placeholder="ejemplo@correo.com"
-                            autocomplete="email" />
+                            autocomplete="email" (blur)="verificarCorreo()" />
                     </div>
 
                     <!-- Error: formato inválido -->
@@ -85,6 +85,12 @@
                     <span class="field-error"
                         *ngIf="f['correo'].touched && f['correo'].errors?.['correoInstitucional']">
                         No se permite un correo institucional. Usa tu correo personal.
+                    </span>
+
+                    <!-- Candado: correo ya registrado -->
+                    <span class="field-error" *ngIf="correoYaRegistrado">
+                        Ya tenemos registradas tus respuestas. Si necesitas corregir algún dato, comunícate con
+                        vinculación.
                     </span>
                 </div>
 
@@ -692,7 +698,8 @@
 
             <div class="form-footer">
                 <p class="progress-info">Sección <span>4 de 4</span> &nbsp;·&nbsp; 17 preguntas en total</p>
-                <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="enviando">
+                <button type="button" class="btn-submit" (click)="onSubmit()"
+                    [disabled]="enviando || correoYaRegistrado">
                     <span *ngIf="!enviando">
                         Enviar respuestas
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
