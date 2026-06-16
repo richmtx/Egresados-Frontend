@@ -143,7 +143,14 @@ body {
     padding: 0;
     object-fit: cover;
     object-position: center;
-    transform: scale(1.0); /* Ajusta este valor hasta que se vea bien */
+    transform: scale(1.0);
+}
+
+.logo-slot--fundacion img {
+    padding: 0;
+    object-fit: contain;
+    object-position: center;
+    transform: scale(1.5);
 }
 
 .logo-divider {
