@@ -79,6 +79,25 @@ export class Egresados1Component implements OnInit, OnDestroy {
   antiguedades: AntiguedadEmpleo[] = [];
   certificacionesVigentes: CertificacionVigente[] = [];
 
+  // Catálogos fijos del primer empleo (no vienen de BD, igual que Titulación).
+  // El texto debe coincidir EXACTAMENTE con las tablas tiempo_primer_empleo
+  // y medio_primer_empleo, porque el backend resuelve por texto.
+  tiemposPrimerEmpleo: string[] = [
+    'Menos de 3 meses',
+    'De 3 a 6 meses',
+    'De 6 meses a 1 año',
+    'De 1 a 2 años',
+    'Más de 2 años',
+    'Aún no he conseguido empleo',
+  ];
+  mediosPrimerEmpleo: string[] = [
+    'LinkedIn',
+    'Otra plataforma de empleo',
+    'Bolsa de trabajo ITD',
+    'Por recomendación',
+    'Otra',
+  ];
+
   // Autocomplete ciudad residencia
   sugerenciasCiudad: string[] = [];
   buscandoCiudad: boolean = false;
@@ -111,6 +130,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
   private ciudadSub!: Subscription;
   private ciudadTrabajoSub!: Subscription;
   private situacionSub!: Subscription;
+  private tiempoSub!: Subscription;
+  private medioSub!: Subscription;
 
   private readonly SITUACIONES_INACTIVAS = [
     'Desempleado',
@@ -133,6 +154,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
       correo: ['', [Validators.required, Validators.email, noCorreoInstitucional()]],
       telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       ciudad: ['', Validators.required],
+      facebook: [''],
+      instagram: [''],
       carrera: ['', Validators.required],
       anio: ['', [Validators.required, Validators.min(1948), Validators.max(this.currentYear)]],
       titulacion: ['', Validators.required],
@@ -142,6 +165,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
       empresa: [''],
       antiguedad: ['', Validators.required],
       ciudadtrabajo: [''],
+      tiempo_primer_empleo: ['', Validators.required],
+      medio_primer_empleo: [''],
+      medio_primer_empleo_otro: [''],
       satisfaccion: ['', Validators.required],
       autorizacion_estadisticos: [false],
       autorizacion_contacto: [false],
@@ -164,6 +190,15 @@ export class Egresados1Component implements OnInit, OnDestroy {
   get estaActivo(): boolean {
     const valor = (this.form.get('situacion')?.value ?? '').toLowerCase();
     return !this.SITUACIONES_INACTIVAS.some(s => s.toLowerCase() === valor);
+  }
+
+  // Solo se muestra/exige la pregunta de medio si SÍ consiguió empleo
+  // La pregunta de medio se "apaga" cuando el egresado nunca consiguió empleo
+  get sinEmpleo(): boolean {
+    return this.form.get('tiempo_primer_empleo')?.value === 'Aún no he conseguido empleo';
+  }
+  get medioEsOtra(): boolean {
+    return this.form.get('medio_primer_empleo')?.value === 'Otra';
   }
 
   // Ciclo de vida
@@ -313,12 +348,47 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
         this.form.get('antiguedad')!.updateValueAndValidity();
       });
+
+    // Primer empleo: el "medio" depende del "tiempo".
+    // Si el egresado nunca se empleó, no se exige (ni se muestra) el medio.
+    this.tiempoSub = this.form.get('tiempo_primer_empleo')!.valueChanges
+      .subscribe((valor: string) => {
+        const requiereMedio = !!valor && valor !== 'Aún no he conseguido empleo';
+        const medioCtrl = this.form.get('medio_primer_empleo')!;
+        const medioOtroCtrl = this.form.get('medio_primer_empleo_otro')!;
+
+        if (requiereMedio) {
+          medioCtrl.setValidators(Validators.required);
+        } else {
+          medioCtrl.setValue('');
+          medioCtrl.clearValidators();
+          medioOtroCtrl.setValue('');
+          medioOtroCtrl.clearValidators();
+          medioOtroCtrl.updateValueAndValidity();
+        }
+        medioCtrl.updateValueAndValidity();
+      });
+
+    // "Otra" en medio: habilita el texto libre obligatorio
+    this.medioSub = this.form.get('medio_primer_empleo')!.valueChanges
+      .subscribe((valor: string) => {
+        const otroCtrl = this.form.get('medio_primer_empleo_otro')!;
+        if (valor === 'Otra') {
+          otroCtrl.setValidators(Validators.required);
+        } else {
+          otroCtrl.setValue('');
+          otroCtrl.clearValidators();
+        }
+        otroCtrl.updateValueAndValidity();
+      });
   }
 
   ngOnDestroy(): void {
     this.ciudadSub?.unsubscribe();
     this.ciudadTrabajoSub?.unsubscribe();
     this.situacionSub?.unsubscribe();
+    this.tiempoSub?.unsubscribe();
+    this.medioSub?.unsubscribe();
     this.cerrarCamaraDesktop();
   }
 
@@ -543,6 +613,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
     const v = this.form.value;
     const inactivo = !this.estaActivo;
+    const sinEmpleo = v.tiempo_primer_empleo === 'Aún no he conseguido empleo';
 
     const payload: CreateEgresadoEtapa1 = {
       nombre_completo: v.nombre,
@@ -550,6 +621,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
       correo: v.correo,
       telefono: v.telefono,
       ciudad_residencia: v.ciudad,
+      facebook: v.facebook || '',
+      instagram: v.instagram || '',
       carrera: v.carrera,
       anio_egreso: Number(v.anio),
       estatus_titulacion: v.titulacion,
@@ -559,6 +632,12 @@ export class Egresados1Component implements OnInit, OnDestroy {
       empresa: inactivo ? '' : (v.empresa || ''),
       antiguedad_empleo: inactivo ? '' : (v.antiguedad || ''),
       ciudad_trabajo: inactivo ? '' : (v.ciudadtrabajo || ''),
+      tiempo_primer_empleo: v.tiempo_primer_empleo,
+      medio_primer_empleo: sinEmpleo ? '' : (v.medio_primer_empleo || ''),
+      medio_primer_empleo_otro:
+        (!sinEmpleo && v.medio_primer_empleo === 'Otra')
+          ? (v.medio_primer_empleo_otro || '')
+          : '',
       satisfaccion_formacion: Number(v.satisfaccion),
       autorizaciones: {
         estadisticas: v.autorizacion_estadisticos,

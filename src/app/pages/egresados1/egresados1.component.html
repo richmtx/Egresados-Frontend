@@ -110,10 +110,38 @@
                     </span>
                 </div>
 
-                <!-- P5 · Foto de perfil (opcional) -->
+                <!-- P5 · Facebook (opcional) -->
                 <div class="question-item">
                     <div class="question-label">
                         <span class="q-num">5</span>
+                        <div class="q-text">Perfil de Facebook
+                            <span class="q-note">Opcional · Solo para quienes deseen compartirlo</span>
+                        </div>
+                    </div>
+                    <div class="field-wrap">
+                        <input type="text" id="facebook" formControlName="facebook"
+                            placeholder="Ej. https://facebook.com/tu.perfil" autocomplete="off" />
+                    </div>
+                </div>
+
+                <!-- P6 · Instagram (opcional) -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">6</span>
+                        <div class="q-text">Perfil de Instagram
+                            <span class="q-note">Opcional · Solo para quienes deseen compartirlo</span>
+                        </div>
+                    </div>
+                    <div class="field-wrap">
+                        <input type="text" id="instagram" formControlName="instagram"
+                            placeholder="Ej. https://instagram.com/tu.perfil" autocomplete="off" />
+                    </div>
+                </div>
+
+                <!-- P7 · Foto de perfil (opcional) -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">7</span>
                         <div class="q-text">Foto de Perfil
                             <span class="q-note">Opcional · JPG o PNG, máximo 2 MB</span>
                         </div>
@@ -158,10 +186,10 @@
                     </div>
                 </div>
 
-                <!-- P6 · Ciudad -->
+                <!-- P8 · Ciudad -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">6</span>
+                        <span class="q-num">8</span>
                         <label class="q-text" for="ciudad">Ciudad y Estado donde resides actualmente
                             <span class="req">*</span></label>
                     </div>
@@ -191,7 +219,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>1 de 4</span> &nbsp;·&nbsp; 17 preguntas en total</p>
+                <p class="progress-info">Sección <span>1 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
             </div>
 
             <!-- ══ MODAL FOTO ══ -->
@@ -462,7 +490,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>2 de 4</span> &nbsp;·&nbsp; 17 preguntas en total</p>
+                <p class="progress-info">Sección <span>2 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
             </div>
         </div>
 
@@ -520,8 +548,8 @@
                            a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0
                            9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                     </svg>
-                    Las siguientes preguntas no aplican para tu situación actual.
-                    Puedes continuar a la siguiente sección.
+                    Las preguntas sobre tu empleo actual no aplican para tu situación.
+                    Puedes continuar; las preguntas sobre tu primer empleo siguen siendo obligatorias.
                 </div>
 
                 <!-- Bloque condicional: solo visible si está trabajando -->
@@ -597,10 +625,92 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- P5 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">5</span>
+                        <div class="q-text">¿Cuánto tiempo te tomó conseguir tu primer empleo después de egresar?
+                            <span class="req">*</span>
+                            <span class="q-note">Selecciona únicamente una opción</span>
+                        </div>
+                    </div>
+                    <div class="radio-group radio-group--grid3" role="radiogroup">
+                        <div class="radio-option" *ngFor="let t of tiemposPrimerEmpleo; let i = index">
+                            <input type="radio" [id]="'tpe-' + i" formControlName="tiempo_primer_empleo" [value]="t" />
+                            <label [for]="'tpe-' + i">{{ t }}</label>
+                        </div>
+                    </div>
+                    <span class="field-error"
+                        *ngIf="f['tiempo_primer_empleo'].invalid && f['tiempo_primer_empleo'].touched">
+                        Selecciona una opción.
+                    </span>
+                </div>
+
+                <!-- P6 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">6</span>
+                        <div class="q-text">¿Por qué medio obtuviste tu primer empleo?
+                            <span class="req">*</span>
+                            <span class="q-note">Selecciona únicamente una opción</span>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group checkbox-group--single" [class.medio-inactivo]="sinEmpleo">
+
+                        <!-- Opciones normales -->
+                        <ng-container *ngFor="let m of mediosPrimerEmpleo; let i = index">
+                            <div class="checkbox-option" *ngIf="m !== 'Otra'">
+                                <input type="radio" [id]="'medio-' + i" formControlName="medio_primer_empleo"
+                                    [value]="m" [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                                <label [for]="'medio-' + i">
+                                    <span class="check-box">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    </span>
+                                    {{ m }}
+                                </label>
+                            </div>
+                        </ng-container>
+
+                        <!-- Opción "Otra" con texto libre (mismo diseño que Habilidades a Reforzar) -->
+                        <div class="checkbox-option checkbox-option--otro">
+                            <input type="radio" id="medio-otra" formControlName="medio_primer_empleo" value="Otra"
+                                [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                            <label for="medio-otra">
+                                <span class="check-box">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                </span>
+                                Otra:
+                            </label>
+                            <input type="text" class="otro-input" formControlName="medio_primer_empleo_otro"
+                                placeholder="Escribe aquí tu respuesta"
+                                [attr.disabled]="(medioEsOtra && !sinEmpleo) ? null : true"
+                                [attr.tabindex]="(medioEsOtra && !sinEmpleo) ? 0 : -1" />
+                        </div>
+
+                    </div>
+
+                    <span class="field-error"
+                        *ngIf="!sinEmpleo && f['medio_primer_empleo'].invalid && f['medio_primer_empleo'].touched">
+                        Selecciona una opción.
+                    </span>
+                    <span class="field-error"
+                        *ngIf="!sinEmpleo && medioEsOtra && f['medio_primer_empleo_otro'].invalid && f['medio_primer_empleo_otro'].touched">
+                        Especifica el medio cuando seleccionas "Otra".
+                    </span>
+                </div>
+
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>3 de 4</span> &nbsp;·&nbsp; 17 preguntas en total</p>
+                <p class="progress-info">Sección <span>3 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
             </div>
         </div>
 
@@ -697,7 +807,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>4 de 4</span> &nbsp;·&nbsp; 17 preguntas en total</p>
+                <p class="progress-info">Sección <span>4 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
                 <button type="button" class="btn-submit" (click)="onSubmit()"
                     [disabled]="enviando || correoYaRegistrado">
                     <span *ngIf="!enviando">
