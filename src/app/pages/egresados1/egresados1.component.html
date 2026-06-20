@@ -593,10 +593,76 @@
                         </span>
                     </div>
 
-                    <!-- P4 · Ciudad trabajo -->
+                    <!-- P4 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
                     <div class="question-item">
                         <div class="question-label">
                             <span class="q-num">4</span>
+                            <div class="q-text">¿Cuánto tiempo te tomó conseguir tu primer empleo después de egresar?
+                                <span class="req">*</span>
+                                <span class="q-note">Selecciona únicamente una opción</span>
+                            </div>
+                        </div>
+                        <div class="radio-group radio-group--grid3" role="radiogroup">
+                            <div class="radio-option" *ngFor="let t of tiemposPrimerEmpleo; let i = index">
+                                <input type="radio" [id]="'tpe-' + i" formControlName="tiempo_primer_empleo"
+                                    [value]="t" />
+                                <label [for]="'tpe-' + i">{{ t }}</label>
+                            </div>
+                        </div>
+                        <span class="field-error"
+                            *ngIf="f['tiempo_primer_empleo'].invalid && f['tiempo_primer_empleo'].touched">
+                            Selecciona una opción.
+                        </span>
+                    </div>
+
+                    <!-- P5 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
+                    <div class="question-item">
+                        <div class="question-label">
+                            <span class="q-num">5</span>
+                            <div class="q-text">¿Por qué medio obtuviste tu primer empleo?
+                                <span class="req">*</span>
+                                <span class="q-note">Selecciona únicamente una opción</span>
+                            </div>
+                        </div>
+
+                        <div class="radio-group radio-group--col" [class.medio-inactivo]="sinEmpleo" role="radiogroup">
+
+                            <!-- Opciones normales -->
+                            <ng-container *ngFor="let m of mediosPrimerEmpleo; let i = index">
+                                <div class="radio-option" *ngIf="m !== 'Otra'">
+                                    <input type="radio" [id]="'medio-' + i" formControlName="medio_primer_empleo"
+                                        [value]="m" [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                                    <label [for]="'medio-' + i">{{ m }}</label>
+                                </div>
+                            </ng-container>
+
+                            <!-- Opción "Otra" con texto libre -->
+                            <div class="radio-option--otra">
+                                <input type="radio" id="medio-otra" formControlName="medio_primer_empleo" value="Otra"
+                                    [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                                <label for="medio-otra" class="otra-label">Otra:</label>
+                                <input type="text" class="otra-input" formControlName="medio_primer_empleo_otro"
+                                    placeholder="Escribe aquí tu respuesta"
+                                    [attr.disabled]="(medioEsOtra && !sinEmpleo) ? null : true"
+                                    [attr.tabindex]="(medioEsOtra && !sinEmpleo) ? 0 : -1" />
+                            </div>
+
+                        </div>
+
+                        <span class="field-error"
+                            *ngIf="!sinEmpleo && f['medio_primer_empleo'].invalid && f['medio_primer_empleo'].touched">
+                            Selecciona una opción.
+                        </span>
+                        <span class="field-error"
+                            *ngIf="!sinEmpleo && medioEsOtra && f['medio_primer_empleo_otro'].invalid && f['medio_primer_empleo_otro'].touched">
+                            Especifica el medio cuando seleccionas "Otra".
+                        </span>
+                    </div>
+
+                    <!-- P6 · Ciudad trabajo -->
+                    <div class="question-item">
+                        <div class="question-label">
+                            <span class="q-num">6</span>
                             <div class="q-text">Ciudad y Estado donde trabajas
                                 <span class="q-note">Si es diferente a donde vives</span>
                             </div>
@@ -625,88 +691,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- P5 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
-                <div class="question-item">
-                    <div class="question-label">
-                        <span class="q-num">5</span>
-                        <div class="q-text">¿Cuánto tiempo te tomó conseguir tu primer empleo después de egresar?
-                            <span class="req">*</span>
-                            <span class="q-note">Selecciona únicamente una opción</span>
-                        </div>
-                    </div>
-                    <div class="radio-group radio-group--grid3" role="radiogroup">
-                        <div class="radio-option" *ngFor="let t of tiemposPrimerEmpleo; let i = index">
-                            <input type="radio" [id]="'tpe-' + i" formControlName="tiempo_primer_empleo" [value]="t" />
-                            <label [for]="'tpe-' + i">{{ t }}</label>
-                        </div>
-                    </div>
-                    <span class="field-error"
-                        *ngIf="f['tiempo_primer_empleo'].invalid && f['tiempo_primer_empleo'].touched">
-                        Selecciona una opción.
-                    </span>
-                </div>
-
-                <!-- P6 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
-                <div class="question-item">
-                    <div class="question-label">
-                        <span class="q-num">6</span>
-                        <div class="q-text">¿Por qué medio obtuviste tu primer empleo?
-                            <span class="req">*</span>
-                            <span class="q-note">Selecciona únicamente una opción</span>
-                        </div>
-                    </div>
-
-                    <div class="checkbox-group checkbox-group--single" [class.medio-inactivo]="sinEmpleo">
-
-                        <!-- Opciones normales -->
-                        <ng-container *ngFor="let m of mediosPrimerEmpleo; let i = index">
-                            <div class="checkbox-option" *ngIf="m !== 'Otra'">
-                                <input type="radio" [id]="'medio-' + i" formControlName="medio_primer_empleo"
-                                    [value]="m" [attr.tabindex]="sinEmpleo ? -1 : 0" />
-                                <label [for]="'medio-' + i">
-                                    <span class="check-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                    </span>
-                                    {{ m }}
-                                </label>
-                            </div>
-                        </ng-container>
-
-                        <!-- Opción "Otra" con texto libre (mismo diseño que Habilidades a Reforzar) -->
-                        <div class="checkbox-option checkbox-option--otro">
-                            <input type="radio" id="medio-otra" formControlName="medio_primer_empleo" value="Otra"
-                                [attr.tabindex]="sinEmpleo ? -1 : 0" />
-                            <label for="medio-otra">
-                                <span class="check-box">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="3">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                </span>
-                                Otra:
-                            </label>
-                            <input type="text" class="otro-input" formControlName="medio_primer_empleo_otro"
-                                placeholder="Escribe aquí tu respuesta"
-                                [attr.disabled]="(medioEsOtra && !sinEmpleo) ? null : true"
-                                [attr.tabindex]="(medioEsOtra && !sinEmpleo) ? 0 : -1" />
-                        </div>
-
-                    </div>
-
-                    <span class="field-error"
-                        *ngIf="!sinEmpleo && f['medio_primer_empleo'].invalid && f['medio_primer_empleo'].touched">
-                        Selecciona una opción.
-                    </span>
-                    <span class="field-error"
-                        *ngIf="!sinEmpleo && medioEsOtra && f['medio_primer_empleo_otro'].invalid && f['medio_primer_empleo_otro'].touched">
-                        Especifica el medio cuando seleccionas "Otra".
-                    </span>
-                </div>
-
             </div>
 
             <div class="form-footer">
