@@ -1,6 +1,12 @@
 {
   "name": "egresados-front",
   "version": "0.0.0",
+  "description": "Formulario público del Sistema de Seguimiento de Egresados del ITD — Angular 19 con SSR.",
+  "author": "Ricardo Martínez Hernández <rich.mtx1205@gmail.com> (https://github.com/richmtx)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/richmtx/Egresados-Frontend.git"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
