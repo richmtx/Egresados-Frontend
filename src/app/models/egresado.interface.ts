@@ -1,4 +1,3 @@
-
 export interface CreateEgresadoEtapa1 {
   // Sección 1 · Datos Personales
   nombre_completo: string;
