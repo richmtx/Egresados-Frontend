@@ -10,6 +10,8 @@ export interface CreateEgresadoEtapa1 {
 
   // Sección 2 · Trayectoria Académica
   carrera: string;
+  anio_ingreso: number;
+  periodo_ingreso: string;
   anio_egreso: number;
   estatus_titulacion: string;
   certificacion_vigente: string;

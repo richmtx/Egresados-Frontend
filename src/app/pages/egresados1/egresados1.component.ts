@@ -48,6 +48,22 @@ function alMenosUnaAutorizacion(): ValidatorFn {
   };
 }
 
+function duracionCarreraValida(): ValidatorFn {
+  return (group: AbstractControl): ValidationErrors | null => {
+    const ingreso = Number(group.get('anio_ingreso')?.value);
+    const egreso = Number(group.get('anio')?.value);
+    if (!ingreso || !egreso) return null;
+
+    if (ingreso > egreso) return { ingresoPosteriorAEgreso: true };
+
+    const diff = egreso - ingreso;
+    if (diff < 4) return { duracionMuyCorta: true };
+    if (diff > 15) return { duracionMuyLarga: true };
+
+    return null;
+  };
+}
+
 @Component({
   selector: 'app-egresados1',
   standalone: true,
@@ -157,6 +173,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
       facebook: [''],
       instagram: [''],
       carrera: ['', Validators.required],
+      anio_ingreso: ['', [Validators.required, Validators.min(this.minAnioIngreso), Validators.max(this.currentYear)]],
+      periodo_ingreso: ['', Validators.required],
       anio: ['', [Validators.required, Validators.min(1948), Validators.max(this.currentYear)]],
       titulacion: ['', Validators.required],
       certificacion: ['', Validators.required],
@@ -172,11 +190,16 @@ export class Egresados1Component implements OnInit, OnDestroy {
       autorizacion_estadisticos: [false],
       autorizacion_contacto: [false],
       autorizacion_actividades: [false],
-    }, { validators: alMenosUnaAutorizacion() });
+    }, { validators: [alMenosUnaAutorizacion(), duracionCarreraValida()] });
   }
 
   // Año máximo dinámico — se actualiza solo cada vez que se carga la app
   currentYear: number = new Date().getFullYear();
+
+  // Año mínimo de ingreso. Pendiente de confirmar con Vinculación.
+  minAnioIngreso: number = 1948;
+
+  periodosIngreso: string[] = ['Enero - Junio', 'Agosto - Diciembre', 'No lo recuerdo'];
 
   get f() { return this.form.controls; }
 
@@ -185,6 +208,29 @@ export class Egresados1Component implements OnInit, OnDestroy {
       (this.form.get('autorizacion_estadisticos')!.touched &&
         this.form.get('autorizacion_contacto')!.touched &&
         this.form.get('autorizacion_actividades')!.touched);
+  }
+
+  private get aniosTocados(): boolean {
+    return this.form.get('anio_ingreso')!.touched && this.form.get('anio')!.touched;
+  }
+
+  get ingresoPosteriorAEgreso(): boolean {
+    return this.form.hasError('ingresoPosteriorAEgreso') && this.aniosTocados;
+  }
+
+  get duracionInvalida(): boolean {
+    return (this.form.hasError('duracionMuyCorta') || this.form.hasError('duracionMuyLarga'))
+      && this.aniosTocados;
+  }
+
+  get mensajeDuracion(): string {
+    if (this.form.hasError('duracionMuyCorta')) {
+      return 'La diferencia entre ingreso y egreso debe ser de al menos 4 años.';
+    }
+    if (this.form.hasError('duracionMuyLarga')) {
+      return 'La diferencia entre ingreso y egreso no puede ser mayor a 15 años.';
+    }
+    return '';
   }
 
   get estaActivo(): boolean {
@@ -624,6 +670,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
       facebook: v.facebook || '',
       instagram: v.instagram || '',
       carrera: v.carrera,
+      anio_ingreso: Number(v.anio_ingreso),
+      periodo_ingreso: v.periodo_ingreso,
       anio_egreso: Number(v.anio),
       estatus_titulacion: v.titulacion,
       certificacion_vigente: v.certificacion,
