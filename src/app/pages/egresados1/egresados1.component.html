@@ -216,10 +216,31 @@
                     </span>
                 </div>
 
+                <!-- P9 · País de nacimiento -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">9</span>
+                        <label class="q-text" for="pais_nacimiento">País de nacimiento
+                            <span class="req">*</span></label>
+                    </div>
+                    <div class="field-wrap select-wrap">
+                        <select id="pais_nacimiento" formControlName="pais_nacimiento">
+                            <option *ngFor="let p of paisesNacimiento" [value]="p">{{ p }}</option>
+                        </select>
+                        <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </div>
+                    <span class="field-error" *ngIf="f['pais_nacimiento'].invalid && f['pais_nacimiento'].touched">
+                        Selecciona tu país de nacimiento.
+                    </span>
+                </div>
+
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>1 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
+                <p class="progress-info">Sección <span>1 de 4</span> &nbsp;·&nbsp; 34 preguntas en total</p>
             </div>
 
             <!-- ══ MODAL FOTO ══ -->
@@ -535,7 +556,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>2 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
+                <p class="progress-info">Sección <span>2 de 4</span> &nbsp;·&nbsp; 34 preguntas en total</p>
             </div>
         </div>
 
@@ -739,7 +760,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>3 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
+                <p class="progress-info">Sección <span>3 de 4</span> &nbsp;·&nbsp; 34 preguntas en total</p>
             </div>
         </div>
 
@@ -821,6 +842,150 @@
 
             </div>
 
+            <div class="form-footer">
+                <p class="progress-info">Sección <span>4 de 5</span> &nbsp;·&nbsp; 34 preguntas en total</p>
+            </div>
+
+        </div>
+
+        <!-- DIVIDER -->
+        <div class="section-divider">
+            <span class="divider-line"></span>
+            <span class="divider-label">Última sección</span>
+            <span class="divider-line"></span>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+         SECCIÓN 5 · Información complementaria
+        ══════════════════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header section-header--last">
+                <div class="section-number section-number--last">5</div>
+                <div>
+                    <div class="section-title">Información complementaria</div>
+                    <div class="section-subtitle">Opcional · Solo para reportes estadísticos de inclusión</div>
+                </div>
+            </div>
+
+            <div class="questions-list">
+
+                <!-- Consentimiento -->
+                <div class="question-item">
+                    <div class="consent-box">
+                        <p class="consent-text">
+                            Las siguientes preguntas son <strong>voluntarias</strong>. La información se utiliza
+                            únicamente para reportes estadísticos agregados de inclusión, requeridos para la
+                            acreditación institucional. Nunca se muestra de forma individual ni se asocia
+                            públicamente a tu nombre. Puedes responder unas y otras no, o no responder ninguna.
+                        </p>
+                        <div class="checkbox-option consent-check">
+                            <input type="checkbox" id="consent" formControlName="consintio_sensibles" />
+                            <label for="consent">Acepto proporcionar esta información</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloque condicional: solo si consintió -->
+                <ng-container *ngIf="consintioSensibles">
+
+                    <!-- Encabezado del instrumento -->
+                    <div class="question-item">
+                        <div class="instrumento-intro">
+                            Por su condición de salud, ¿tiene dificultad para…
+                        </div>
+                    </div>
+
+                    <!-- Las 6 preguntas de dificultad funcional -->
+                    <div class="question-item" *ngFor="let d of discapacidadDominios; let i = index">
+                        <div class="question-label">
+                            <span class="q-num">{{ i + 1 }}</span>
+                            <div class="q-text">{{ d.pregunta }} <span class="req">*</span></div>
+                        </div>
+                        <div class="radio-group radio-group--col">
+                            <div class="radio-option" *ngFor="let g of gradosDificultad">
+                                <input type="radio" [id]="'g-' + d.clave + '-' + g.clave"
+                                    [formControlName]="nombreControlDominio(d.clave)" [value]="g.clave" />
+                                <label [for]="'g-' + d.clave + '-' + g.clave">{{ g.descripcion }}</label>
+                            </div>
+                        </div>
+                        <span class="field-error"
+                            *ngIf="f[nombreControlDominio(d.clave)].invalid && f[nombreControlDominio(d.clave)].touched">
+                            Selecciona una opción.
+                        </span>
+                    </div>
+
+                    <!-- Identidad cultural -->
+                    <div class="question-item">
+                        <div class="question-label">
+                            <span class="q-num">7</span>
+                            <div class="q-text">De acuerdo con su cultura, ¿se considera indígena?
+                                <span class="req">*</span>
+                            </div>
+                        </div>
+                        <div class="radio-group">
+                            <div class="radio-option" *ngFor="let r of respuestasAutoadscripcion">
+                                <input type="radio" [id]="'ind-' + r.clave" formControlName="ident_indigena"
+                                    [value]="r.clave" />
+                                <label [for]="'ind-' + r.clave">{{ r.descripcion }}</label>
+                            </div>
+                        </div>
+                        <span class="field-error" *ngIf="f['ident_indigena'].invalid && f['ident_indigena'].touched">
+                            Selecciona una opción.
+                        </span>
+                    </div>
+
+                    <div class="question-item">
+                        <div class="question-label">
+                            <span class="q-num">8</span>
+                            <div class="q-text">¿Habla alguna lengua indígena? <span class="req">*</span></div>
+                        </div>
+                        <div class="radio-group">
+                            <div class="radio-option" *ngFor="let r of respuestasAutoadscripcion">
+                                <input type="radio" [id]="'len-' + r.clave" formControlName="ident_habla_lengua"
+                                    [value]="r.clave" />
+                                <label [for]="'len-' + r.clave">{{ r.descripcion }}</label>
+                            </div>
+                        </div>
+                        <span class="field-error"
+                            *ngIf="f['ident_habla_lengua'].invalid && f['ident_habla_lengua'].touched">
+                            Selecciona una opción.
+                        </span>
+
+                        <!-- Texto libre, solo si habla alguna -->
+                        <div class="field-wrap lengua-wrap" *ngIf="hablaLenguaIndigena">
+                            <label class="lengua-label" for="ident_lengua">¿Cuál?</label>
+                            <input type="text" id="ident_lengua" formControlName="ident_lengua"
+                                placeholder="Ej. Tepehuano" autocomplete="off" />
+                            <span class="field-error" *ngIf="f['ident_lengua'].invalid && f['ident_lengua'].touched">
+                                Indica cuál lengua hablas.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="question-item">
+                        <div class="question-label">
+                            <span class="q-num">9</span>
+                            <div class="q-text">¿Se considera afromexicano/a, negro/a o afrodescendiente?
+                                <span class="req">*</span>
+                            </div>
+                        </div>
+                        <div class="radio-group">
+                            <div class="radio-option" *ngFor="let r of respuestasAutoadscripcion">
+                                <input type="radio" [id]="'afro-' + r.clave" formControlName="ident_afromexicano"
+                                    [value]="r.clave" />
+                                <label [for]="'afro-' + r.clave">{{ r.descripcion }}</label>
+                            </div>
+                        </div>
+                        <span class="field-error"
+                            *ngIf="f['ident_afromexicano'].invalid && f['ident_afromexicano'].touched">
+                            Selecciona una opción.
+                        </span>
+                    </div>
+
+                </ng-container>
+
+            </div>
+
             <!-- Mensaje de error general -->
             <div class="error-toast" *ngIf="errorMensaje">
                 <span>{{ errorMensaje }}</span>
@@ -836,7 +1001,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>4 de 4</span> &nbsp;·&nbsp; 21 preguntas en total</p>
+                <p class="progress-info">Sección <span>5 de 5</span> &nbsp;·&nbsp; 34 preguntas en total</p>
                 <button type="button" class="btn-submit" (click)="onSubmit()"
                     [disabled]="enviando || correoYaRegistrado">
                     <span *ngIf="!enviando">

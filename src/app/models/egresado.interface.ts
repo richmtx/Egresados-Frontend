@@ -1,3 +1,17 @@
+/** Una respuesta del instrumento de dificultad funcional */
+export interface DiscapacidadRespuesta {
+  dominio: string;   // clave del dominio
+  grado: string;     // clave del grado
+}
+
+/** Bloque de identidad cultural */
+export interface IdentidadCultural {
+  indigena: string;          // clave de autoadscripción
+  habla_lengua: string;      // clave de autoadscripción
+  lengua_indigena?: string;  // texto libre, solo si habla_lengua = 'si'
+  afromexicano: string;      // clave de autoadscripción
+}
+
 export interface CreateEgresadoEtapa1 {
   // Sección 1 · Datos Personales
   nombre_completo: string;
@@ -5,6 +19,7 @@ export interface CreateEgresadoEtapa1 {
   correo: string;
   telefono: string;
   ciudad_residencia: string;
+  pais_nacimiento: string;
   facebook: string;
   instagram: string;
 
@@ -33,6 +48,11 @@ export interface CreateEgresadoEtapa1 {
     contacto: boolean;
     eventos: boolean;
   };
+
+  // Sección 5 · Información complementaria (datos sensibles, opcionales)
+  consintio_datos_sensibles?: boolean;
+  discapacidad?: DiscapacidadRespuesta[];
+  identidad?: IdentidadCultural;
 }
 
 /** Payload que se envía al backend en la Etapa 2 */

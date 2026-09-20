@@ -10,10 +10,11 @@ import { forkJoin, Subject, of, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { EgresadosService } from '../../services/egresados.service';
 import { CatalogosService } from '../../services/catalogos.service';
-import { CreateEgresadoEtapa1 } from '../../models/egresado.interface';
+import { CreateEgresadoEtapa1, DiscapacidadRespuesta, IdentidadCultural } from '../../models/egresado.interface';
 import {
   Carrera, Genero, NivelIngles, SituacionLaboral,
   AntiguedadEmpleo, CertificacionVigente,
+  DiscapacidadDominio, GradoDificultad, RespuestaAutoadscripcion,
 } from '../../models/catalogos.interface';
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
@@ -95,6 +96,11 @@ export class Egresados1Component implements OnInit, OnDestroy {
   antiguedades: AntiguedadEmpleo[] = [];
   certificacionesVigentes: CertificacionVigente[] = [];
 
+  // Catálogos de la sección 5 (información complementaria)
+  discapacidadDominios: DiscapacidadDominio[] = [];
+  gradosDificultad: GradoDificultad[] = [];
+  respuestasAutoadscripcion: RespuestaAutoadscripcion[] = [];
+
   // Catálogos fijos del primer empleo (no vienen de BD, igual que Titulación).
   // El texto debe coincidir EXACTAMENTE con las tablas tiempo_primer_empleo
   // y medio_primer_empleo, porque el backend resuelve por texto.
@@ -148,6 +154,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
   private situacionSub!: Subscription;
   private tiempoSub!: Subscription;
   private medioSub!: Subscription;
+  private consentSub!: Subscription;
+  private lenguaSub!: Subscription;
 
   private readonly SITUACIONES_INACTIVAS = [
     'Desempleado',
@@ -170,6 +178,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
       correo: ['', [Validators.required, Validators.email, noCorreoInstitucional()]],
       telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       ciudad: ['', Validators.required],
+      pais_nacimiento: ['México', Validators.required],
       facebook: [''],
       instagram: [''],
       carrera: ['', Validators.required],
@@ -190,6 +199,21 @@ export class Egresados1Component implements OnInit, OnDestroy {
       autorizacion_estadisticos: [false],
       autorizacion_contacto: [false],
       autorizacion_actividades: [false],
+
+      // ── Sección 5 · Información complementaria (datos sensibles) ──
+      // Todos arrancan vacíos y sin validadores. Los validadores se
+      // activan solo si el egresado marca el consentimiento.
+      consintio_sensibles: [false],
+      disc_ver: [''],
+      disc_oir: [''],
+      disc_caminar: [''],
+      disc_recordar: [''],
+      disc_autocuidado: [''],
+      disc_comunicar: [''],
+      ident_indigena: [''],
+      ident_habla_lengua: [''],
+      ident_lengua: [''],
+      ident_afromexicano: [''],
     }, { validators: [alMenosUnaAutorizacion(), duracionCarreraValida()] });
   }
 
@@ -200,6 +224,25 @@ export class Egresados1Component implements OnInit, OnDestroy {
   minAnioIngreso: number = 1948;
 
   periodosIngreso: string[] = ['Enero - Junio', 'Agosto - Diciembre', 'No lo recuerdo'];
+
+  // País de nacimiento. México primero por ser el caso mayoritario;
+  // el resto en orden alfabético.
+  paisesNacimiento: string[] = [
+    'México',
+    'Alemania', 'Argentina', 'Belice', 'Bolivia', 'Brasil', 'Canadá',
+    'Chile', 'China', 'Colombia', 'Corea del Sur', 'Costa Rica', 'Cuba',
+    'Ecuador', 'El Salvador', 'España', 'Estados Unidos', 'Francia',
+    'Guatemala', 'Haití', 'Honduras', 'India', 'Italia', 'Japón',
+    'Nicaragua', 'Panamá', 'Paraguay', 'Perú', 'Reino Unido',
+    'República Dominicana', 'Uruguay', 'Venezuela',
+    'Otro',
+  ];
+
+  // Mapea cada clave de dominio con su control en el formulario.
+  // El orden define cómo se numeran las preguntas en pantalla.
+  readonly clavesDominio: string[] = [
+    'ver', 'oir', 'caminar', 'recordar', 'autocuidado', 'comunicar',
+  ];
 
   get f() { return this.form.controls; }
 
@@ -221,6 +264,18 @@ export class Egresados1Component implements OnInit, OnDestroy {
   get duracionInvalida(): boolean {
     return (this.form.hasError('duracionMuyCorta') || this.form.hasError('duracionMuyLarga'))
       && this.aniosTocados;
+  }
+
+  get consintioSensibles(): boolean {
+    return this.form.get('consintio_sensibles')?.value === true;
+  }
+
+  get hablaLenguaIndigena(): boolean {
+    return this.form.get('ident_habla_lengua')?.value === 'si';
+  }
+
+  nombreControlDominio(clave: string): string {
+    return 'disc_' + clave;
   }
 
   get mensajeDuracion(): string {
@@ -261,6 +316,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
       situacionesLaborales: this.catalogos.getSituacionesLaborales(),
       antiguedades: this.catalogos.getAntiguedades(),
       certificacionesVigentes: this.catalogos.getCertificacionesVigentes(),
+      discapacidadDominios: this.catalogos.getDiscapacidadDominios(),
+      gradosDificultad: this.catalogos.getGradosDificultad(),
+      respuestasAutoadscripcion: this.catalogos.getRespuestasAutoadscripcion(),
     }).subscribe({
       next: (data) => {
         this.carreras = data.carreras;
@@ -271,6 +329,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
         this.situacionesLaborales = data.situacionesLaborales;
         this.antiguedades = data.antiguedades;
         this.certificacionesVigentes = data.certificacionesVigentes;
+        this.discapacidadDominios = data.discapacidadDominios;
+        this.gradosDificultad = data.gradosDificultad;
+        this.respuestasAutoadscripcion = data.respuestasAutoadscripcion;
         this.cargando = false;
       },
       error: (err) => {
@@ -427,6 +488,50 @@ export class Egresados1Component implements OnInit, OnDestroy {
         }
         otroCtrl.updateValueAndValidity();
       });
+
+    // Consentimiento de datos sensibles.
+    // Al marcarlo, las diez preguntas se vuelven obligatorias.
+    // Al desmarcarlo, se limpian por completo: no basta con ocultarlas,
+    // los valores tienen que desaparecer del formulario para que el
+    // payload no los arrastre.
+    const controlesSensibles = [
+      ...this.clavesDominio.map(c => 'disc_' + c),
+      'ident_indigena', 'ident_habla_lengua', 'ident_afromexicano',
+    ];
+
+    this.consentSub = this.form.get('consintio_sensibles')!.valueChanges
+      .subscribe((consintio: boolean) => {
+        controlesSensibles.forEach(nombre => {
+          const ctrl = this.form.get(nombre)!;
+          if (consintio) {
+            ctrl.setValidators(Validators.required);
+          } else {
+            ctrl.setValue('');
+            ctrl.clearValidators();
+          }
+          ctrl.updateValueAndValidity();
+        });
+
+        if (!consintio) {
+          const lengua = this.form.get('ident_lengua')!;
+          lengua.setValue('');
+          lengua.clearValidators();
+          lengua.updateValueAndValidity();
+        }
+      });
+
+    // La lengua indígena solo se pide (y se guarda) si habla alguna.
+    this.lenguaSub = this.form.get('ident_habla_lengua')!.valueChanges
+      .subscribe((valor: string) => {
+        const lengua = this.form.get('ident_lengua')!;
+        if (valor === 'si') {
+          lengua.setValidators(Validators.required);
+        } else {
+          lengua.setValue('');
+          lengua.clearValidators();
+        }
+        lengua.updateValueAndValidity();
+      });
   }
 
   ngOnDestroy(): void {
@@ -435,6 +540,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.situacionSub?.unsubscribe();
     this.tiempoSub?.unsubscribe();
     this.medioSub?.unsubscribe();
+    this.consentSub?.unsubscribe();
+    this.lenguaSub?.unsubscribe();
     this.cerrarCamaraDesktop();
   }
 
@@ -667,6 +774,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
       correo: v.correo,
       telefono: v.telefono,
       ciudad_residencia: v.ciudad,
+      pais_nacimiento: v.pais_nacimiento,
       facebook: v.facebook || '',
       instagram: v.instagram || '',
       carrera: v.carrera,
@@ -692,6 +800,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
         contacto: v.autorizacion_contacto,
         eventos: v.autorizacion_actividades,
       },
+      ...this.construirDatosSensibles(v),
     };
 
     this.enviando = true;
@@ -768,5 +877,38 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }
 
     console.error('Error Etapa 1:', err);
+  }
+
+  /**
+ * Arma el bloque de datos sensibles solo si hubo consentimiento expreso.
+ * Sin consentimiento devuelve un objeto vacío: el payload no lleva
+ * consintio_datos_sensibles, ni discapacidad, ni identidad. El backend
+ * descarta lo que llegue sin consentimiento, pero aquí ni siquiera se
+ * envía.
+ */
+  private construirDatosSensibles(v: any): Partial<CreateEgresadoEtapa1> {
+    if (v.consintio_sensibles !== true) {
+      return {};
+    }
+
+    const discapacidad: DiscapacidadRespuesta[] = this.clavesDominio
+      .map(clave => ({ dominio: clave, grado: v['disc_' + clave] }))
+      .filter(r => !!r.grado);
+
+    const identidad: IdentidadCultural = {
+      indigena: v.ident_indigena,
+      habla_lengua: v.ident_habla_lengua,
+      afromexicano: v.ident_afromexicano,
+    };
+
+    if (v.ident_habla_lengua === 'si' && v.ident_lengua) {
+      identidad.lengua_indigena = v.ident_lengua;
+    }
+
+    return {
+      consintio_datos_sensibles: true,
+      discapacidad,
+      identidad,
+    };
   }
 }
