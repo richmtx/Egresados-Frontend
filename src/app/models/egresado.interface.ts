@@ -55,13 +55,14 @@ export interface CreateEgresadoEtapa1 {
   periodo_ingreso: string;
   anio_egreso: number;
   estatus_titulacion: string;
-  certificacion_vigente: string;
+  certificacion_vigente?: string;   // ya no se usa; el backend lo acepta opcional
   estudios?: EstudioPosterior[];
   nivel_ingles: string;
 
   // Sección 3 · Situación Laboral
   situacion_laboral: string;
   empresa: string;
+  puesto_trabajo?: string;          // máx 150
   antiguedad_empleo: string;
   ciudad_trabajo: string;
   tiempo_primer_empleo: string;
@@ -95,7 +96,6 @@ export interface CreateEgresadoEtapa2 {
 
   // Sección 2 · Detalle Profesional
   linkedin: string;
-  puesto_trabajo: string;
   coincidencia_laboral: string;
   certificaciones: string;
 

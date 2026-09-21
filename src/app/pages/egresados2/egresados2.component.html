@@ -87,7 +87,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>1 de 3</span> &nbsp;·&nbsp; 9 preguntas en total</p>
+                <p class="progress-info">Sección <span>1 de 3</span> &nbsp;·&nbsp; 8 preguntas en total</p>
             </div>
         </div>
 
@@ -124,22 +124,10 @@
                     </div>
                 </div>
 
-                <!-- P2 · Puesto -->
+                <!-- P2 · Coincidencia laboral — dinámico desde BD -->
                 <div class="question-item">
                     <div class="question-label">
                         <span class="q-num">2</span>
-                        <label class="q-text" for="puesto">Puesto específico que desempeñas</label>
-                    </div>
-                    <div class="field-wrap">
-                        <input type="text" id="puesto" formControlName="puesto"
-                            placeholder="Ej. Ingeniero de Software Senior" />
-                    </div>
-                </div>
-
-                <!-- P3 · Coincidencia laboral — dinámico desde BD -->
-                <div class="question-item">
-                    <div class="question-label">
-                        <span class="q-num">3</span>
                         <div class="q-text">Coincidencia Laboral <span class="req">*</span>
                             <span class="q-note">¿Qué tanto coincide tu trabajo con tu carrera?</span>
                         </div>
@@ -165,23 +153,26 @@
                     </span>
                 </div>
 
-                <!-- P4 · Certificaciones específicas -->
+                <!-- P3 · Certificaciones específicas -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">4</span>
-                        <label class="q-text" for="certificaciones">Certificaciones o posgrados específicos
-                            (nombres)</label>
+                        <span class="q-num">3</span>
+                        <label class="q-text" for="certificaciones">Certificaciones profesionales que tengas
+                            (nombres)
+                            <span class="q-note">Opcional · No incluyas maestrías ni posgrados, esos ya los registraste
+                                en la etapa anterior</span>
+                        </label>
                     </div>
                     <div class="field-wrap">
                         <input type="text" id="certificaciones" formControlName="certificaciones"
-                            placeholder="Ej. AWS Certified Developer, Maestría en Administración" />
+                            placeholder="Ej. AWS Certified Developer, Scrum Master, Six Sigma Green Belt" />
                     </div>
                 </div>
 
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>2 de 3</span> &nbsp;·&nbsp; 9 preguntas en total</p>
+                <p class="progress-info">Sección <span>2 de 3</span> &nbsp;·&nbsp; 8 preguntas en total</p>
             </div>
         </div>
 
@@ -427,7 +418,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>3 de 3</span> &nbsp;·&nbsp; 9 preguntas en total</p>
+                <p class="progress-info">Sección <span>3 de 3</span> &nbsp;·&nbsp; 8 preguntas en total</p>
                 <button type="button" class="btn-submit" (click)="onSubmit()" [disabled]="enviando">
                     <span *ngIf="!enviando">
                         Enviar respuestas

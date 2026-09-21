@@ -240,7 +240,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>1 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
+                <p class="progress-info">Sección <span>1 de 5</span> &nbsp;·&nbsp; 38 preguntas en total</p>
             </div>
 
             <!-- ══ MODAL FOTO ══ -->
@@ -512,31 +512,10 @@
                     </span>
                 </div>
 
-                <!-- P6 · Certificación vigente — dinámico desde BD -->
+                <!-- P6 · Estudios posteriores — niveles dinámicos desde BD; "No" es fijo -->
                 <div class="question-item">
                     <div class="question-label">
                         <span class="q-num">6</span>
-                        <div class="q-text">¿Cuentas con alguna certificación profesional o estudios de Posgrado
-                            vigentes?
-                            <span class="req">*</span>
-                        </div>
-                    </div>
-                    <div class="radio-group radio-group--sm" role="radiogroup">
-                        <div class="radio-option" *ngFor="let cv of certificacionesVigentes">
-                            <input type="radio" [id]="'cert-' + cv.id_certificacion_vigente"
-                                formControlName="certificacion" [value]="cv.respuesta" />
-                            <label [for]="'cert-' + cv.id_certificacion_vigente">{{ cv.respuesta }}</label>
-                        </div>
-                    </div>
-                    <span class="field-error" *ngIf="f['certificacion'].invalid && f['certificacion'].touched">
-                        Selecciona una opción.
-                    </span>
-                </div>
-
-                <!-- P7 · Estudios posteriores — niveles dinámicos desde BD; "No" es fijo -->
-                <div class="question-item">
-                    <div class="question-label">
-                        <span class="q-num">7</span>
                         <div class="q-text">¿Has cursado estudios después de tu carrera? <span class="req">*</span>
                             <span class="q-note">Selecciona únicamente una opción</span>
                         </div>
@@ -614,10 +593,10 @@
                     </div>
                 </div>
 
-                <!-- P8 · Inglés — dinámico desde BD -->
+                <!-- P7 · Inglés — dinámico desde BD -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">8</span>
+                        <span class="q-num">7</span>
                         <div class="q-text">Dominio del idioma inglés <span class="req">*</span>
                             <span class="q-note">Selecciona únicamente una opción</span>
                         </div>
@@ -637,7 +616,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>2 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
+                <p class="progress-info">Sección <span>2 de 5</span> &nbsp;·&nbsp; 38 preguntas en total</p>
             </div>
         </div>
 
@@ -717,10 +696,25 @@
                         </div>
                     </div>
 
-                    <!-- P3 · Antigüedad -->
+                    <!-- P3 · Puesto actual -->
                     <div class="question-item">
                         <div class="question-label">
                             <span class="q-num">3</span>
+                            <label class="q-text" for="puesto_trabajo">
+                                Puesto que desempeñas actualmente
+                            </label>
+                        </div>
+                        <div class="field-wrap">
+                            <input type="text" id="puesto_trabajo" formControlName="puesto_trabajo"
+                                placeholder="Ej. Ingeniero de Software Senior" maxlength="150"
+                                [attr.tabindex]="estaActivo ? 0 : -1" />
+                        </div>
+                    </div>
+
+                    <!-- P4 · Antigüedad -->
+                    <div class="question-item">
+                        <div class="question-label">
+                            <span class="q-num">4</span>
                             <div class="q-text">
                                 Antigüedad en tu empleo actual
                                 <span class="req" *ngIf="estaActivo">*</span>
@@ -740,10 +734,10 @@
                         </span>
                     </div>
 
-                    <!-- P4 · Ciudad trabajo -->
+                    <!-- P5 · Ciudad trabajo -->
                     <div class="question-item">
                         <div class="question-label">
-                            <span class="q-num">4</span>
+                            <span class="q-num">5</span>
                             <div class="q-text">Ciudad y Estado donde trabajas
                                 <span class="q-note">Si es diferente a donde vives</span>
                             </div>
@@ -775,10 +769,10 @@
 
                 <!-- ── Bloque de PRIMER EMPLEO (FUERA de .preguntas-laborales, siempre activo) ── -->
 
-                <!-- P5 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
+                <!-- P6 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">5</span>
+                        <span class="q-num">6</span>
                         <div class="q-text">¿Cuánto tiempo te tomó conseguir tu primer empleo después de egresar?
                             <span class="req">*</span>
                             <span class="q-note">Selecciona únicamente una opción</span>
@@ -797,10 +791,10 @@
                     </span>
                 </div>
 
-                <!-- P6 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
+                <!-- P7 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">6</span>
+                        <span class="q-num">7</span>
                         <div class="q-text">¿Por qué medio obtuviste tu primer empleo?
                             <span class="req">*</span>
                             <span class="q-note">Selecciona únicamente una opción</span>
@@ -841,10 +835,10 @@
                     </span>
                 </div>
 
-                <!-- P7 · Empresa del primer empleo (se apaga igual que P6 si "Aún no...") -->
+                <!-- P8 · Empresa del primer empleo (se apaga igual que P7 si "Aún no...") -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">7</span>
+                        <span class="q-num">8</span>
                         <label class="q-text" for="primer_empleo_empresa">¿En qué empresa o institución fue tu primer
                             empleo? <span class="req">*</span></label>
                     </div>
@@ -858,10 +852,10 @@
                     </span>
                 </div>
 
-                <!-- P8 · Puesto del primer empleo (se apaga igual que P6 si "Aún no...") -->
+                <!-- P9 · Puesto del primer empleo (se apaga igual que P7 si "Aún no...") -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">8</span>
+                        <span class="q-num">9</span>
                         <label class="q-text" for="primer_empleo_puesto">¿Qué puesto ocupabas en tu primer empleo?
                             <span class="req">*</span></label>
                     </div>
@@ -877,10 +871,10 @@
 
                 <!-- ── Bloque de EMPRENDIMIENTO (siempre activo) ── -->
 
-                <!-- P9 · Emprendimiento -->
+                <!-- P10 · Emprendimiento -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">9</span>
+                        <span class="q-num">10</span>
                         <div class="q-text">¿Has iniciado un negocio, empresa o proyecto propio, aunque no sea tu
                             actividad principal? <span class="req">*</span>
                             <span class="q-note">Selecciona únicamente una opción</span>
@@ -972,7 +966,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>3 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
+                <p class="progress-info">Sección <span>3 de 5</span> &nbsp;·&nbsp; 38 preguntas en total</p>
             </div>
         </div>
 
@@ -1135,7 +1129,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>4 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
+                <p class="progress-info">Sección <span>4 de 5</span> &nbsp;·&nbsp; 38 preguntas en total</p>
             </div>
 
         </div>
@@ -1293,7 +1287,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>5 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
+                <p class="progress-info">Sección <span>5 de 5</span> &nbsp;·&nbsp; 38 preguntas en total</p>
                 <button type="button" class="btn-submit" (click)="onSubmit()"
                     [disabled]="enviando || correoYaRegistrado">
                     <span *ngIf="!enviando">

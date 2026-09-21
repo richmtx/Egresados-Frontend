@@ -16,7 +16,7 @@ import {
 } from '../../models/egresado.interface';
 import {
   Carrera, Genero, NivelIngles, SituacionLaboral,
-  AntiguedadEmpleo, CertificacionVigente,
+  AntiguedadEmpleo,
   DiscapacidadDominio, GradoDificultad, RespuestaAutoadscripcion,
   NivelEstudio, EstadoEstudio, TipoProyectoSocial, RangoEmpleados,
 } from '../../models/catalogos.interface';
@@ -104,7 +104,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
   nivelesIngles: NivelIngles[] = [];
   situacionesLaborales: SituacionLaboral[] = [];
   antiguedades: AntiguedadEmpleo[] = [];
-  certificacionesVigentes: CertificacionVigente[] = [];
 
   // Catálogos de la sección 5 (información complementaria)
   discapacidadDominios: DiscapacidadDominio[] = [];
@@ -205,7 +204,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
       periodo_ingreso: ['', Validators.required],
       anio: ['', [Validators.required, Validators.min(1948), Validators.max(this.currentYear)]],
       titulacion: ['', Validators.required],
-      certificacion: ['', Validators.required],
 
       // ── Estudios posteriores ──
       // Solo estudio_nivel es obligatorio de entrada; el resto arranca sin
@@ -219,6 +217,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
       ingles: ['', Validators.required],
       situacion: ['', Validators.required],
       empresa: [''],
+      puesto_trabajo: ['', Validators.maxLength(150)],
       antiguedad: ['', Validators.required],
       ciudadtrabajo: [''],
       tiempo_primer_empleo: ['', Validators.required],
@@ -377,7 +376,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
       nivelesIngles: this.catalogos.getNivelesIngles(),
       situacionesLaborales: this.catalogos.getSituacionesLaborales(),
       antiguedades: this.catalogos.getAntiguedades(),
-      certificacionesVigentes: this.catalogos.getCertificacionesVigentes(),
       discapacidadDominios: this.catalogos.getDiscapacidadDominios(),
       gradosDificultad: this.catalogos.getGradosDificultad(),
       respuestasAutoadscripcion: this.catalogos.getRespuestasAutoadscripcion(),
@@ -394,7 +392,6 @@ export class Egresados1Component implements OnInit, OnDestroy {
         this.nivelesIngles = data.nivelesIngles;
         this.situacionesLaborales = data.situacionesLaborales;
         this.antiguedades = data.antiguedades;
-        this.certificacionesVigentes = data.certificacionesVigentes;
         this.discapacidadDominios = data.discapacidadDominios;
         this.gradosDificultad = data.gradosDificultad;
         this.respuestasAutoadscripcion = data.respuestasAutoadscripcion;
@@ -511,6 +508,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
         if (inactivo) {
           this.form.get('empresa')!.setValue('');
+          this.form.get('puesto_trabajo')!.setValue('');
           this.form.get('antiguedad')!.setValue('');
           this.form.get('ciudadtrabajo')!.setValue('');
           this.form.get('antiguedad')!.clearValidators();
@@ -906,6 +904,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     const v = this.form.value;
     const inactivo = !this.estaActivo;
     const sinEmpleo = v.tiempo_primer_empleo === 'Aún no he conseguido empleo';
+    const puestoTrabajo = inactivo ? '' : String(v.puesto_trabajo ?? '').trim();
 
     const payload: CreateEgresadoEtapa1 = {
       nombre_completo: v.nombre,
@@ -921,11 +920,11 @@ export class Egresados1Component implements OnInit, OnDestroy {
       periodo_ingreso: v.periodo_ingreso,
       anio_egreso: Number(v.anio),
       estatus_titulacion: v.titulacion,
-      certificacion_vigente: v.certificacion,
       ...this.construirEstudios(v),
       nivel_ingles: v.ingles,
       situacion_laboral: v.situacion,
       empresa: inactivo ? '' : (v.empresa || ''),
+      ...(puestoTrabajo ? { puesto_trabajo: puestoTrabajo } : {}),
       antiguedad_empleo: inactivo ? '' : (v.antiguedad || ''),
       ciudad_trabajo: inactivo ? '' : (v.ciudadtrabajo || ''),
       tiempo_primer_empleo: v.tiempo_primer_empleo,

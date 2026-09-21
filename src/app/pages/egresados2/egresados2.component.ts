@@ -62,7 +62,6 @@ export class Egresados2Component implements OnInit {
 
       // Sección 2 · Detalle Profesional
       linkedin: [''],
-      puesto: [''],
       coincidencia: ['', Validators.required],
       certificaciones: [''],
 
@@ -190,7 +189,6 @@ export class Egresados2Component implements OnInit {
       nombre_completo: v.nombre,
       numero_control: v.ncontrol,
       linkedin: v.linkedin || '',
-      puesto_trabajo: v.puesto || '',
       coincidencia_laboral: v.coincidencia,
       certificaciones: v.certificaciones || '',
       habilidades,
