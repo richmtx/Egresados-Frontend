@@ -919,6 +919,134 @@ input.ng-invalid.ng-touched {
   color: #6b1a3a;
 }
 
+/* Aviso de borrador guardado (mismo lenguaje visual que .aviso-inactivo) */
+.aviso-borrador {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f3edf7;
+  border-left: 4px solid #6b1a3a;
+  border-radius: 8px;
+  padding: 16px;
+  color: #4a1530;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 24px rgba(0, 51, 102, 0.1);
+}
+
+.aviso-borrador>svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #6b1a3a;
+}
+
+.aviso-borrador-cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-borrador-titulo {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.aviso-borrador-ayuda {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.aviso-borrador-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-borrador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1.5px solid;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn-borrador:focus-visible,
+.btn-borrar-borrador:focus-visible {
+  outline: 3px solid var(--azul-lt);
+  outline-offset: 2px;
+}
+
+.btn-borrador--primario {
+  background: var(--guinda);
+  border-color: var(--guinda);
+  color: var(--blanco);
+}
+
+.btn-borrador--primario:hover {
+  background: var(--guinda-lt);
+  border-color: var(--guinda-lt);
+}
+
+.btn-borrador--secundario {
+  background: transparent;
+  border-color: var(--azul);
+  color: var(--azul);
+}
+
+.btn-borrador--secundario:hover {
+  background: rgba(0, 51, 102, 0.07);
+}
+
+/* Línea discreta del footer de la sección 1 */
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.borrador-info {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b6878;
+  margin: 0;
+}
+
+.btn-borrar-borrador {
+  display: inline;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--azul);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.btn-borrar-borrador:hover {
+  color: var(--azul-lt);
+}
+
+@media (max-width: 520px) {
+  .aviso-borrador-acciones .btn-borrador {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-borrador {
+    transition: none;
+  }
+}
+
 /* FOTO DE PERFIL — Área de carga */
 .foto-upload-area {
   display: flex;

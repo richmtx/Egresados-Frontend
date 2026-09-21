@@ -7,7 +7,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, Subject, of, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, tap } from 'rxjs/operators';
 import { EgresadosService } from '../../services/egresados.service';
 import { CatalogosService } from '../../services/catalogos.service';
 import {
@@ -74,6 +74,34 @@ function duracionCarreraValida(): ValidatorFn {
     return null;
   };
 }
+
+// ── Borrador local de la etapa 1 ──
+// Se usa en equipos compartidos: nada de la sección 5 se guarda nunca y
+// el borrador jamás se restaura sin que el egresado lo confirme.
+const CLAVE_BORRADOR = 'egresados_borrador_etapa1';
+const VERSION_BORRADOR = 1;
+const VIGENCIA_BORRADOR_MS = 7 * 24 * 60 * 60 * 1000;
+const ESPERA_GUARDADO_MS = 800;
+
+// Sección 5 (datos sensibles): nunca se serializa ni se restaura.
+const CONTROLES_EXCLUIDOS_BORRADOR: readonly string[] = [
+  'consintio_sensibles',
+  'disc_ver', 'disc_oir', 'disc_caminar', 'disc_recordar',
+  'disc_autocuidado', 'disc_comunicar',
+  'ident_indigena', 'ident_habla_lengua', 'ident_lengua', 'ident_afromexicano',
+];
+
+// Controles con suscripción que configura validadores o limpia dependientes.
+// Al restaurar se asignan primero y en este orden (tiempo antes que medio,
+// porque tiempoSub limpia medio y medioSub limpia medio_primer_empleo_otro).
+const CONTROLES_DISPARADORES_BORRADOR: readonly string[] = [
+  'situacion',
+  'tiempo_primer_empleo',
+  'medio_primer_empleo',
+  'estudio_nivel',
+  'emp_tiene',
+  'proy_participa',
+];
 
 @Component({
   selector: 'app-egresados1',
@@ -174,6 +202,16 @@ export class Egresados1Component implements OnInit, OnDestroy {
   private estudioSub!: Subscription;
   private emprendeSub!: Subscription;
   private proyectoSub!: Subscription;
+  private borradorSub?: Subscription;
+
+  // Borrador local
+  hayBorrador = false;
+  fechaBorrador = '';
+  private borradorPendiente: Record<string, unknown> | null = null;
+  private envioExitoso = false;
+  // Valores con los que arranca el formulario (para saber si está "vacío"
+  // y para reiniciarlo sin depender de que reset() ponga null).
+  private readonly valoresIniciales: Record<string, unknown>;
 
   private readonly SITUACIONES_INACTIVAS = [
     'Desempleado',
@@ -263,6 +301,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
       ident_lengua: [''],
       ident_afromexicano: [''],
     }, { validators: [alMenosUnaAutorizacion(), duracionCarreraValida()] });
+
+    this.valoresIniciales = this.form.getRawValue();
   }
 
   // Año máximo dinámico — se actualiza solo cada vez que se carga la app
@@ -363,11 +403,23 @@ export class Egresados1Component implements OnInit, OnDestroy {
     return this.form.get('proy_participa')?.value === 'si';
   }
 
+  get mostrarAvisoBorrador(): boolean {
+    return this.borradorPendiente !== null;
+  }
+
   // Ciclo de vida
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // El primer cambio con el aviso visible equivale a "Empezar de nuevo":
+      // el tap descarta el borrador viejo antes de que el debounce reanude
+      // el guardado.
+      this.borradorSub = this.form.valueChanges.pipe(
+        tap(() => this.descartarBorradorPendiente()),
+        debounceTime(ESPERA_GUARDADO_MS),
+      ).subscribe(() => this.guardarBorrador());
     }
 
     forkJoin({
@@ -400,6 +452,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
         this.tiposProyectoSocial = data.tiposProyectoSocial;
         this.rangosEmpleados = data.rangosEmpleados;
         this.cargando = false;
+        this.ofrecerBorrador();
       },
       error: (err) => {
         this.cargando = false;
@@ -679,7 +732,172 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.estudioSub?.unsubscribe();
     this.emprendeSub?.unsubscribe();
     this.proyectoSub?.unsubscribe();
+    this.borradorSub?.unsubscribe();
     this.cerrarCamaraDesktop();
+  }
+
+  // ── Borrador local (localStorage) ──
+
+  private puedeUsarStorage(): boolean {
+    return isPlatformBrowser(this.platformId);
+  }
+
+  private valoresGuardables(): Record<string, unknown> {
+    const valores: Record<string, unknown> = {};
+    Object.entries(this.form.getRawValue()).forEach(([nombre, valor]) => {
+      if (!CONTROLES_EXCLUIDOS_BORRADOR.includes(nombre)) {
+        valores[nombre] = valor;
+      }
+    });
+    return valores;
+  }
+
+  // "Vacío" = todos los controles guardables siguen en su valor inicial
+  // (pais_nacimiento arranca en 'México', eso cuenta como vacío).
+  private formularioVacio(): boolean {
+    return Object.entries(this.valoresGuardables())
+      .every(([nombre, valor]) => valor === this.valoresIniciales[nombre]);
+  }
+
+  private guardarBorrador(): void {
+    if (!this.puedeUsarStorage() || this.mostrarAvisoBorrador || this.envioExitoso) return;
+
+    // Si el egresado borró todo, el borrador anterior ya no representa nada.
+    if (this.formularioVacio()) {
+      this.borrarBorrador();
+      return;
+    }
+
+    try {
+      localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({
+        version: VERSION_BORRADOR,
+        guardado_en: new Date().toISOString(),
+        valores: this.valoresGuardables(),
+      }));
+      this.hayBorrador = true;
+    } catch {
+      // Modo privado o cuota llena: el formulario sigue sin borrador.
+    }
+  }
+
+  private borrarBorrador(): void {
+    this.hayBorrador = false;
+    if (!this.puedeUsarStorage()) return;
+    try {
+      localStorage.removeItem(CLAVE_BORRADOR);
+    } catch {
+      // Sin acceso a localStorage: no hay nada que limpiar.
+    }
+  }
+
+  // Devuelve el borrador solo si es vigente y válido; si no, lo borra.
+  private leerBorrador(): { guardadoEn: Date; valores: Record<string, unknown> } | null {
+    if (!this.puedeUsarStorage()) return null;
+
+    try {
+      const crudo = localStorage.getItem(CLAVE_BORRADOR);
+      if (crudo === null) return null;
+
+      const dato = JSON.parse(crudo);
+      const guardadoEn = new Date(dato?.guardado_en);
+      const antiguedad = Date.now() - guardadoEn.getTime();
+      const valores = dato?.valores;
+
+      const valido =
+        dato?.version === VERSION_BORRADOR &&
+        !isNaN(guardadoEn.getTime()) &&
+        antiguedad >= 0 && antiguedad <= VIGENCIA_BORRADOR_MS &&
+        valores !== null && typeof valores === 'object' && !Array.isArray(valores);
+
+      if (!valido) {
+        this.borrarBorrador();
+        return null;
+      }
+      return { guardadoEn, valores };
+    } catch {
+      this.borrarBorrador();
+      return null;
+    }
+  }
+
+  // Se llama cuando terminan de cargar los catálogos. Nunca restaura solo.
+  private ofrecerBorrador(): void {
+    const borrador = this.leerBorrador();
+    if (!borrador) return;
+
+    this.hayBorrador = true;
+    this.borradorPendiente = borrador.valores;
+    this.fechaBorrador = this.formatearFecha(borrador.guardadoEn);
+  }
+
+  private formatearFecha(fecha: Date): string {
+    try {
+      return new Intl.DateTimeFormat('es-MX', { dateStyle: 'long', timeStyle: 'short' }).format(fecha);
+    } catch {
+      return fecha.toLocaleString();
+    }
+  }
+
+  private descartarBorradorPendiente(): void {
+    if (!this.borradorPendiente) return;
+    this.borradorPendiente = null;
+    this.borrarBorrador();
+  }
+
+  continuarBorrador(): void {
+    const valores = this.borradorPendiente;
+    if (!valores) return;
+
+    // Ocultar el aviso ANTES de asignar, o el primer valueChanges lo
+    // trataría como "empezar a escribir" y borraría el borrador.
+    this.borradorPendiente = null;
+    this.restaurarBorrador(valores);
+  }
+
+  empezarDeNuevo(): void {
+    this.reiniciarFormulario();
+  }
+
+  borrarRespuestasGuardadas(): void {
+    if (!confirm('¿Borrar las respuestas guardadas y reiniciar el formulario?')) return;
+    this.reiniciarFormulario();
+  }
+
+  private reiniciarFormulario(): void {
+    this.borradorPendiente = null;
+    this.borrarBorrador();
+    this.form.reset(this.valoresIniciales);
+    this.correoYaRegistrado = false;
+  }
+
+  private esRestaurable(nombre: string, valor: unknown): boolean {
+    if (CONTROLES_EXCLUIDOS_BORRADOR.includes(nombre)) return false;
+    if (!Object.prototype.hasOwnProperty.call(this.valoresIniciales, nombre)) return false;
+
+    return typeof this.valoresIniciales[nombre] === 'boolean'
+      ? typeof valor === 'boolean'
+      : typeof valor === 'string' || typeof valor === 'number';
+  }
+
+  // Primero los disparadores (con emitEvent normal, para que sus
+  // suscripciones configuren validadores) y después los dependientes, así
+  // ninguna suscripción borra un valor recién restaurado.
+  private restaurarBorrador(valores: Record<string, unknown>): void {
+    const restaurables = Object.keys(valores).filter(n => this.esRestaurable(n, valores[n]));
+    const disparadores = CONTROLES_DISPARADORES_BORRADOR.filter(n => restaurables.includes(n));
+    const dependientes = restaurables.filter(n => !CONTROLES_DISPARADORES_BORRADOR.includes(n));
+
+    [...disparadores, ...dependientes].forEach(nombre => {
+      this.form.get(nombre)?.setValue(valores[nombre]);
+    });
+
+    // Sin errores rojos en campos que el usuario todavía no ha tocado.
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+
+    if (this.form.get('correo')?.value) {
+      this.verificarCorreo();
+    }
   }
 
   // Autocomplete ciudad residencia
@@ -991,6 +1209,10 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
   private handleSuccess(resp: any, correo: string): void {
     this.enviando = false;
+    // Antes de navegar; envioExitoso evita que un guardado pendiente
+    // (debounce) lo vuelva a escribir.
+    this.envioExitoso = true;
+    this.borrarBorrador();
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('id_egresado', String(resp.id_egresado));
       localStorage.setItem('correo_egresado', correo);
