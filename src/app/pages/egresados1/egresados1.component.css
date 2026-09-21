@@ -1501,6 +1501,16 @@ input.ng-invalid.ng-touched {
   margin-bottom: 6px;
 }
 
+/* Varios campos dentro de un mismo bloque condicional (.lengua-wrap) */
+.subcampo + .subcampo {
+  margin-top: 16px;
+}
+
+/* La última pregunta del bloque laboral ya no cierra la sección: conserva su línea */
+.preguntas-laborales .question-item:last-child {
+  border-bottom: 1px solid var(--gris-l);
+}
+
 /* ── FOOTER ── */
 .footer {
   background: var(--guinda);

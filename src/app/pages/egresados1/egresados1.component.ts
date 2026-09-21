@@ -10,13 +10,23 @@ import { forkJoin, Subject, of, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { EgresadosService } from '../../services/egresados.service';
 import { CatalogosService } from '../../services/catalogos.service';
-import { CreateEgresadoEtapa1, DiscapacidadRespuesta, IdentidadCultural } from '../../models/egresado.interface';
+import {
+  CreateEgresadoEtapa1, DiscapacidadRespuesta, IdentidadCultural,
+  EstudioPosterior, Emprendimiento, ProyectoSocial,
+} from '../../models/egresado.interface';
 import {
   Carrera, Genero, NivelIngles, SituacionLaboral,
   AntiguedadEmpleo, CertificacionVigente,
   DiscapacidadDominio, GradoDificultad, RespuestaAutoadscripcion,
+  NivelEstudio, EstadoEstudio, TipoProyectoSocial, RangoEmpleados,
 } from '../../models/catalogos.interface';
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
+// Requerido que no acepta solo espacios (Validators.required sí los acepta).
+function textoRequerido(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null =>
+    String(control.value ?? '').trim() ? null : { required: true };
+}
 
 function noCorreoInstitucional(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -101,6 +111,12 @@ export class Egresados1Component implements OnInit, OnDestroy {
   gradosDificultad: GradoDificultad[] = [];
   respuestasAutoadscripcion: RespuestaAutoadscripcion[] = [];
 
+  // Catálogos de trayectoria profesional (fase 4)
+  nivelesEstudio: NivelEstudio[] = [];
+  estadosEstudio: EstadoEstudio[] = [];
+  tiposProyectoSocial: TipoProyectoSocial[] = [];
+  rangosEmpleados: RangoEmpleados[] = [];
+
   // Catálogos fijos del primer empleo (no vienen de BD, igual que Titulación).
   // El texto debe coincidir EXACTAMENTE con las tablas tiempo_primer_empleo
   // y medio_primer_empleo, porque el backend resuelve por texto.
@@ -156,6 +172,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
   private medioSub!: Subscription;
   private consentSub!: Subscription;
   private lenguaSub!: Subscription;
+  private estudioSub!: Subscription;
+  private emprendeSub!: Subscription;
+  private proyectoSub!: Subscription;
 
   private readonly SITUACIONES_INACTIVAS = [
     'Desempleado',
@@ -187,6 +206,16 @@ export class Egresados1Component implements OnInit, OnDestroy {
       anio: ['', [Validators.required, Validators.min(1948), Validators.max(this.currentYear)]],
       titulacion: ['', Validators.required],
       certificacion: ['', Validators.required],
+
+      // ── Estudios posteriores ──
+      // Solo estudio_nivel es obligatorio de entrada; el resto arranca sin
+      // validadores y se activa si el nivel es distinto de 'no'.
+      estudio_nivel: ['', Validators.required],
+      estudio_programa: [''],
+      estudio_institucion: [''],
+      estudio_estado: [''],
+      estudio_anio: [''],
+
       ingles: ['', Validators.required],
       situacion: ['', Validators.required],
       empresa: [''],
@@ -195,6 +224,26 @@ export class Egresados1Component implements OnInit, OnDestroy {
       tiempo_primer_empleo: ['', Validators.required],
       medio_primer_empleo: [''],
       medio_primer_empleo_otro: [''],
+      // Primer empleo: obligatorios salvo que el egresado nunca se haya
+      // empleado (se activan desde tiempoSub, igual que medio_primer_empleo).
+      primer_empleo_empresa: [''],
+      primer_empleo_puesto: [''],
+
+      // ── Emprendimiento ──
+      emp_tiene: ['', Validators.required],
+      emp_nombre: [''],
+      emp_giro: [''],
+      emp_anio: [''],
+      emp_sigue: [''],
+      emp_rango: [''],
+
+      // ── Proyectos sociales (sección 4) ──
+      proy_participa: ['', Validators.required],
+      proy_nombre: [''],
+      proy_tipo: [''],
+      proy_anio: [''],
+      proy_organizacion: [''],
+
       satisfaccion: ['', Validators.required],
       autorizacion_estadisticos: [false],
       autorizacion_contacto: [false],
@@ -302,6 +351,19 @@ export class Egresados1Component implements OnInit, OnDestroy {
     return this.form.get('medio_primer_empleo')?.value === 'Otra';
   }
 
+  get tieneEstudios(): boolean {
+    const nivel = this.form.get('estudio_nivel')?.value;
+    return !!nivel && nivel !== 'no';
+  }
+
+  get emprendio(): boolean {
+    return this.form.get('emp_tiene')?.value === 'si';
+  }
+
+  get participoProyecto(): boolean {
+    return this.form.get('proy_participa')?.value === 'si';
+  }
+
   // Ciclo de vida
 
   ngOnInit(): void {
@@ -319,6 +381,10 @@ export class Egresados1Component implements OnInit, OnDestroy {
       discapacidadDominios: this.catalogos.getDiscapacidadDominios(),
       gradosDificultad: this.catalogos.getGradosDificultad(),
       respuestasAutoadscripcion: this.catalogos.getRespuestasAutoadscripcion(),
+      nivelesEstudio: this.catalogos.getNivelesEstudio(),
+      estadosEstudio: this.catalogos.getEstadosEstudio(),
+      tiposProyectoSocial: this.catalogos.getTiposProyectoSocial(),
+      rangosEmpleados: this.catalogos.getRangosEmpleados(),
     }).subscribe({
       next: (data) => {
         this.carreras = data.carreras;
@@ -332,6 +398,10 @@ export class Egresados1Component implements OnInit, OnDestroy {
         this.discapacidadDominios = data.discapacidadDominios;
         this.gradosDificultad = data.gradosDificultad;
         this.respuestasAutoadscripcion = data.respuestasAutoadscripcion;
+        this.nivelesEstudio = data.nivelesEstudio;
+        this.estadosEstudio = data.estadosEstudio;
+        this.tiposProyectoSocial = data.tiposProyectoSocial;
+        this.rangosEmpleados = data.rangosEmpleados;
         this.cargando = false;
       },
       error: (err) => {
@@ -474,6 +544,12 @@ export class Egresados1Component implements OnInit, OnDestroy {
           medioOtroCtrl.updateValueAndValidity();
         }
         medioCtrl.updateValueAndValidity();
+
+        // Empresa y puesto del primer empleo: mismo criterio que el medio.
+        this.alternarBloque({
+          primer_empleo_empresa: [textoRequerido(), Validators.maxLength(150)],
+          primer_empleo_puesto: [textoRequerido(), Validators.maxLength(150)],
+        }, requiereMedio);
       });
 
     // "Otra" en medio: habilita el texto libre obligatorio
@@ -532,6 +608,66 @@ export class Egresados1Component implements OnInit, OnDestroy {
         }
         lengua.updateValueAndValidity();
       });
+
+    // Estudios posteriores: cualquier nivel distinto de 'no' despliega el
+    // bloque. Cambiar de un nivel a otro conserva lo capturado.
+    this.estudioSub = this.form.get('estudio_nivel')!.valueChanges
+      .subscribe((nivel: string) => {
+        this.alternarBloque({
+          estudio_programa: [textoRequerido(), Validators.maxLength(150)],
+          estudio_institucion: [textoRequerido(), Validators.maxLength(150)],
+          estudio_estado: [Validators.required],
+          estudio_anio: this.validadoresAnio(),
+        }, !!nivel && nivel !== 'no');
+      });
+
+    // Emprendimiento: "Sí" despliega el bloque; "No" lo limpia por completo.
+    this.emprendeSub = this.form.get('emp_tiene')!.valueChanges
+      .subscribe((valor: string) => {
+        this.alternarBloque({
+          emp_nombre: [textoRequerido(), Validators.maxLength(150)],
+          emp_giro: [textoRequerido(), Validators.maxLength(150)],
+          emp_anio: this.validadoresAnio(),
+          emp_sigue: [Validators.required],
+          emp_rango: [],
+        }, valor === 'si');
+      });
+
+    // Proyectos sociales: igual que emprendimiento.
+    this.proyectoSub = this.form.get('proy_participa')!.valueChanges
+      .subscribe((valor: string) => {
+        this.alternarBloque({
+          proy_nombre: [textoRequerido(), Validators.maxLength(150)],
+          proy_tipo: [Validators.required],
+          proy_anio: this.validadoresAnio(),
+          proy_organizacion: [Validators.maxLength(150)],
+        }, valor === 'si');
+      });
+  }
+
+  // Rango de un año opcional: solo valida si trae valor (min/max/pattern
+  // ignoran los vacíos).
+  private validadoresAnio(): ValidatorFn[] {
+    return [
+      Validators.min(1950),
+      Validators.max(this.currentYear),
+      Validators.pattern(/^\d{4}$/),
+    ];
+  }
+
+  // Activa (pone validadores) o desactiva (limpia valor y validadores) un
+  // bloque condicional. Mismo patrón que consentSub y lenguaSub.
+  private alternarBloque(controles: Record<string, ValidatorFn[]>, activo: boolean): void {
+    Object.entries(controles).forEach(([nombre, validadores]) => {
+      const ctrl = this.form.get(nombre)!;
+      if (activo) {
+        ctrl.setValidators(validadores);
+      } else {
+        ctrl.setValue('');
+        ctrl.clearValidators();
+      }
+      ctrl.updateValueAndValidity();
+    });
   }
 
   ngOnDestroy(): void {
@@ -542,6 +678,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.medioSub?.unsubscribe();
     this.consentSub?.unsubscribe();
     this.lenguaSub?.unsubscribe();
+    this.estudioSub?.unsubscribe();
+    this.emprendeSub?.unsubscribe();
+    this.proyectoSub?.unsubscribe();
     this.cerrarCamaraDesktop();
   }
 
@@ -783,6 +922,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
       anio_egreso: Number(v.anio),
       estatus_titulacion: v.titulacion,
       certificacion_vigente: v.certificacion,
+      ...this.construirEstudios(v),
       nivel_ingles: v.ingles,
       situacion_laboral: v.situacion,
       empresa: inactivo ? '' : (v.empresa || ''),
@@ -794,6 +934,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
         (!sinEmpleo && v.medio_primer_empleo === 'Otra')
           ? (v.medio_primer_empleo_otro || '')
           : '',
+      ...this.construirPrimerEmpleo(v, sinEmpleo),
+      ...this.construirEmprendimiento(v),
+      ...this.construirProyectoSocial(v),
       satisfaccion_formacion: Number(v.satisfaccion),
       autorizaciones: {
         estadisticas: v.autorizacion_estadisticos,
@@ -877,6 +1020,78 @@ export class Egresados1Component implements OnInit, OnDestroy {
     }
 
     console.error('Error Etapa 1:', err);
+  }
+
+  // Los opcionales vacíos no se envían: ni strings vacíos ni null.
+  private tieneValor(valor: unknown): boolean {
+    return valor !== null && valor !== undefined && String(valor).trim() !== '';
+  }
+
+  private construirPrimerEmpleo(v: any, sinEmpleo: boolean): Partial<CreateEgresadoEtapa1> {
+    if (sinEmpleo) {
+      return {};
+    }
+    return {
+      primer_empleo_empresa: String(v.primer_empleo_empresa).trim(),
+      primer_empleo_puesto: String(v.primer_empleo_puesto).trim(),
+    };
+  }
+
+  private construirEstudios(v: any): Partial<CreateEgresadoEtapa1> {
+    if (!v.estudio_nivel || v.estudio_nivel === 'no') {
+      return {};
+    }
+
+    const estudio: EstudioPosterior = {
+      nivel: v.estudio_nivel,
+      nombre_programa: String(v.estudio_programa).trim(),
+      institucion: String(v.estudio_institucion).trim(),
+      estado: v.estudio_estado,
+    };
+    if (this.tieneValor(v.estudio_anio)) {
+      estudio.anio = Number(v.estudio_anio);
+    }
+
+    return { estudios: [estudio] };
+  }
+
+  private construirEmprendimiento(v: any): Partial<CreateEgresadoEtapa1> {
+    if (v.emp_tiene !== 'si') {
+      return {};
+    }
+
+    const emprendimiento: Emprendimiento = {
+      nombre: String(v.emp_nombre).trim(),
+      giro: String(v.emp_giro).trim(),
+      sigue_operando: v.emp_sigue === 'si',
+    };
+    if (this.tieneValor(v.emp_anio)) {
+      emprendimiento.anio_inicio = Number(v.emp_anio);
+    }
+    if (this.tieneValor(v.emp_rango)) {
+      emprendimiento.rango_empleados = v.emp_rango;
+    }
+
+    return { emprendimientos: [emprendimiento] };
+  }
+
+  private construirProyectoSocial(v: any): Partial<CreateEgresadoEtapa1> {
+    if (v.proy_participa !== 'si') {
+      return {};
+    }
+
+    const proyecto: ProyectoSocial = {
+      nombre: String(v.proy_nombre).trim(),
+      tipo: v.proy_tipo,
+    };
+    if (this.tieneValor(v.proy_anio)) {
+      proyecto.anio = Number(v.proy_anio);
+    }
+    if (this.tieneValor(v.proy_organizacion)) {
+      proyecto.organizacion = String(v.proy_organizacion).trim();
+    }
+
+    return { proyectos_sociales: [proyecto] };
   }
 
   /**

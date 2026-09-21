@@ -240,7 +240,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>1 de 4</span> &nbsp;·&nbsp; 34 preguntas en total</p>
+                <p class="progress-info">Sección <span>1 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
             </div>
 
             <!-- ══ MODAL FOTO ══ -->
@@ -533,10 +533,91 @@
                     </span>
                 </div>
 
-                <!-- P7 · Inglés — dinámico desde BD -->
+                <!-- P7 · Estudios posteriores — niveles dinámicos desde BD; "No" es fijo -->
                 <div class="question-item">
                     <div class="question-label">
                         <span class="q-num">7</span>
+                        <div class="q-text">¿Has cursado estudios después de tu carrera? <span class="req">*</span>
+                            <span class="q-note">Selecciona únicamente una opción</span>
+                        </div>
+                    </div>
+                    <div class="radio-group radio-group--col" role="radiogroup">
+                        <div class="radio-option">
+                            <input type="radio" id="estudio-no" formControlName="estudio_nivel" value="no" />
+                            <label for="estudio-no">No</label>
+                        </div>
+                        <div class="radio-option" *ngFor="let n of nivelesEstudio">
+                            <input type="radio" [id]="'estudio-' + n.clave" formControlName="estudio_nivel"
+                                [value]="n.clave" />
+                            <label [for]="'estudio-' + n.clave">{{ n.descripcion }}</label>
+                        </div>
+                    </div>
+                    <span class="field-error" *ngIf="f['estudio_nivel'].invalid && f['estudio_nivel'].touched">
+                        Selecciona una opción.
+                    </span>
+
+                    <!-- Bloque condicional: solo si eligió un nivel -->
+                    <div class="lengua-wrap" *ngIf="tieneEstudios">
+                        <div class="subcampo">
+                            <label class="lengua-label" for="estudio_programa">Nombre del programa
+                                <span class="req">*</span></label>
+                            <div class="field-wrap">
+                                <input type="text" id="estudio_programa" formControlName="estudio_programa"
+                                    autocomplete="off" />
+                            </div>
+                            <span class="field-error"
+                                *ngIf="f['estudio_programa'].invalid && f['estudio_programa'].touched">
+                                Escribe el nombre del programa (máximo 150 caracteres).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <label class="lengua-label" for="estudio_institucion">Institución
+                                <span class="req">*</span></label>
+                            <div class="field-wrap">
+                                <input type="text" id="estudio_institucion" formControlName="estudio_institucion"
+                                    placeholder="Ej. UNAM" autocomplete="off" />
+                            </div>
+                            <span class="field-error"
+                                *ngIf="f['estudio_institucion'].invalid && f['estudio_institucion'].touched">
+                                Escribe la institución (máximo 150 caracteres).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <div class="lengua-label">Estado <span class="req">*</span></div>
+                            <div class="radio-group" role="radiogroup">
+                                <div class="radio-option" *ngFor="let e of estadosEstudio">
+                                    <input type="radio" [id]="'estudio-estado-' + e.clave"
+                                        formControlName="estudio_estado" [value]="e.clave" />
+                                    <label [for]="'estudio-estado-' + e.clave">{{ e.descripcion }}</label>
+                                </div>
+                            </div>
+                            <span class="field-error"
+                                *ngIf="f['estudio_estado'].invalid && f['estudio_estado'].touched">
+                                Selecciona el estado de tus estudios.
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <label class="lengua-label" for="estudio_anio">Año
+                                <span class="q-note">Opcional · de conclusión, o de inicio si sigue en curso</span>
+                            </label>
+                            <div class="field-wrap">
+                                <input type="number" id="estudio_anio" formControlName="estudio_anio"
+                                    placeholder="Ej. 2023" min="1950" [max]="currentYear" step="1" />
+                            </div>
+                            <span class="field-error" *ngIf="f['estudio_anio'].invalid && f['estudio_anio'].touched">
+                                Ingresa un año válido (1950–{{ currentYear }}).
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- P8 · Inglés — dinámico desde BD -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">8</span>
                         <div class="q-text">Dominio del idioma inglés <span class="req">*</span>
                             <span class="q-note">Selecciona únicamente una opción</span>
                         </div>
@@ -556,7 +637,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>2 de 4</span> &nbsp;·&nbsp; 34 preguntas en total</p>
+                <p class="progress-info">Sección <span>2 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
             </div>
         </div>
 
@@ -618,7 +699,7 @@
                     Puedes continuar; las preguntas sobre tu primer empleo siguen siendo obligatorias.
                 </div>
 
-                <!-- Bloque condicional: solo visible si está trabajando -->
+                <!-- Bloque condicional: solo empleo ACTUAL. Se apaga si está inactivo -->
                 <div class="preguntas-laborales" [class.inactivo]="!estaActivo">
 
                     <!-- P2 · Empresa -->
@@ -659,76 +740,10 @@
                         </span>
                     </div>
 
-                    <!-- P4 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
+                    <!-- P4 · Ciudad trabajo -->
                     <div class="question-item">
                         <div class="question-label">
                             <span class="q-num">4</span>
-                            <div class="q-text">¿Cuánto tiempo te tomó conseguir tu primer empleo después de egresar?
-                                <span class="req">*</span>
-                                <span class="q-note">Selecciona únicamente una opción</span>
-                            </div>
-                        </div>
-                        <div class="radio-group radio-group--grid3" role="radiogroup">
-                            <div class="radio-option" *ngFor="let t of tiemposPrimerEmpleo; let i = index">
-                                <input type="radio" [id]="'tpe-' + i" formControlName="tiempo_primer_empleo"
-                                    [value]="t" />
-                                <label [for]="'tpe-' + i">{{ t }}</label>
-                            </div>
-                        </div>
-                        <span class="field-error"
-                            *ngIf="f['tiempo_primer_empleo'].invalid && f['tiempo_primer_empleo'].touched">
-                            Selecciona una opción.
-                        </span>
-                    </div>
-
-                    <!-- P5 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
-                    <div class="question-item">
-                        <div class="question-label">
-                            <span class="q-num">5</span>
-                            <div class="q-text">¿Por qué medio obtuviste tu primer empleo?
-                                <span class="req">*</span>
-                                <span class="q-note">Selecciona únicamente una opción</span>
-                            </div>
-                        </div>
-
-                        <div class="radio-group radio-group--col" [class.medio-inactivo]="sinEmpleo" role="radiogroup">
-
-                            <!-- Opciones normales -->
-                            <ng-container *ngFor="let m of mediosPrimerEmpleo; let i = index">
-                                <div class="radio-option" *ngIf="m !== 'Otra'">
-                                    <input type="radio" [id]="'medio-' + i" formControlName="medio_primer_empleo"
-                                        [value]="m" [attr.tabindex]="sinEmpleo ? -1 : 0" />
-                                    <label [for]="'medio-' + i">{{ m }}</label>
-                                </div>
-                            </ng-container>
-
-                            <!-- Opción "Otra" con texto libre -->
-                            <div class="radio-option--otra">
-                                <input type="radio" id="medio-otra" formControlName="medio_primer_empleo" value="Otra"
-                                    [attr.tabindex]="sinEmpleo ? -1 : 0" />
-                                <label for="medio-otra" class="otra-label">Otra:</label>
-                                <input type="text" class="otra-input" formControlName="medio_primer_empleo_otro"
-                                    placeholder="Escribe aquí tu respuesta"
-                                    [attr.disabled]="(medioEsOtra && !sinEmpleo) ? null : true"
-                                    [attr.tabindex]="(medioEsOtra && !sinEmpleo) ? 0 : -1" />
-                            </div>
-
-                        </div>
-
-                        <span class="field-error"
-                            *ngIf="!sinEmpleo && f['medio_primer_empleo'].invalid && f['medio_primer_empleo'].touched">
-                            Selecciona una opción.
-                        </span>
-                        <span class="field-error"
-                            *ngIf="!sinEmpleo && medioEsOtra && f['medio_primer_empleo_otro'].invalid && f['medio_primer_empleo_otro'].touched">
-                            Especifica el medio cuando seleccionas "Otra".
-                        </span>
-                    </div>
-
-                    <!-- P6 · Ciudad trabajo -->
-                    <div class="question-item">
-                        <div class="question-label">
-                            <span class="q-num">6</span>
                             <div class="q-text">Ciudad y Estado donde trabajas
                                 <span class="q-note">Si es diferente a donde vives</span>
                             </div>
@@ -757,17 +772,214 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ── Bloque de PRIMER EMPLEO (FUERA de .preguntas-laborales, siempre activo) ── -->
+
+                <!-- P5 · Tiempo para conseguir el primer empleo (SIEMPRE obligatorio) -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">5</span>
+                        <div class="q-text">¿Cuánto tiempo te tomó conseguir tu primer empleo después de egresar?
+                            <span class="req">*</span>
+                            <span class="q-note">Selecciona únicamente una opción</span>
+                        </div>
+                    </div>
+                    <div class="radio-group radio-group--grid3" role="radiogroup">
+                        <div class="radio-option" *ngFor="let t of tiemposPrimerEmpleo; let i = index">
+                            <input type="radio" [id]="'tpe-' + i" formControlName="tiempo_primer_empleo"
+                                [value]="t" />
+                            <label [for]="'tpe-' + i">{{ t }}</label>
+                        </div>
+                    </div>
+                    <span class="field-error"
+                        *ngIf="f['tiempo_primer_empleo'].invalid && f['tiempo_primer_empleo'].touched">
+                        Selecciona una opción.
+                    </span>
+                </div>
+
+                <!-- P6 · Medio del primer empleo (siempre visible; se apaga si "Aún no...") -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">6</span>
+                        <div class="q-text">¿Por qué medio obtuviste tu primer empleo?
+                            <span class="req">*</span>
+                            <span class="q-note">Selecciona únicamente una opción</span>
+                        </div>
+                    </div>
+
+                    <div class="radio-group radio-group--col" [class.medio-inactivo]="sinEmpleo" role="radiogroup">
+
+                        <!-- Opciones normales -->
+                        <ng-container *ngFor="let m of mediosPrimerEmpleo; let i = index">
+                            <div class="radio-option" *ngIf="m !== 'Otra'">
+                                <input type="radio" [id]="'medio-' + i" formControlName="medio_primer_empleo"
+                                    [value]="m" [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                                <label [for]="'medio-' + i">{{ m }}</label>
+                            </div>
+                        </ng-container>
+
+                        <!-- Opción "Otra" con texto libre -->
+                        <div class="radio-option--otra">
+                            <input type="radio" id="medio-otra" formControlName="medio_primer_empleo" value="Otra"
+                                [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                            <label for="medio-otra" class="otra-label">Otra:</label>
+                            <input type="text" class="otra-input" formControlName="medio_primer_empleo_otro"
+                                placeholder="Escribe aquí tu respuesta"
+                                [attr.disabled]="(medioEsOtra && !sinEmpleo) ? null : true"
+                                [attr.tabindex]="(medioEsOtra && !sinEmpleo) ? 0 : -1" />
+                        </div>
+
+                    </div>
+
+                    <span class="field-error"
+                        *ngIf="!sinEmpleo && f['medio_primer_empleo'].invalid && f['medio_primer_empleo'].touched">
+                        Selecciona una opción.
+                    </span>
+                    <span class="field-error"
+                        *ngIf="!sinEmpleo && medioEsOtra && f['medio_primer_empleo_otro'].invalid && f['medio_primer_empleo_otro'].touched">
+                        Especifica el medio cuando seleccionas "Otra".
+                    </span>
+                </div>
+
+                <!-- P7 · Empresa del primer empleo (se apaga igual que P6 si "Aún no...") -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">7</span>
+                        <label class="q-text" for="primer_empleo_empresa">¿En qué empresa o institución fue tu primer
+                            empleo? <span class="req">*</span></label>
+                    </div>
+                    <div class="field-wrap" [class.medio-inactivo]="sinEmpleo">
+                        <input type="text" id="primer_empleo_empresa" formControlName="primer_empleo_empresa"
+                            autocomplete="off" [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                    </div>
+                    <span class="field-error"
+                        *ngIf="!sinEmpleo && f['primer_empleo_empresa'].invalid && f['primer_empleo_empresa'].touched">
+                        Escribe la empresa o institución (máximo 150 caracteres).
+                    </span>
+                </div>
+
+                <!-- P8 · Puesto del primer empleo (se apaga igual que P6 si "Aún no...") -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">8</span>
+                        <label class="q-text" for="primer_empleo_puesto">¿Qué puesto ocupabas en tu primer empleo?
+                            <span class="req">*</span></label>
+                    </div>
+                    <div class="field-wrap" [class.medio-inactivo]="sinEmpleo">
+                        <input type="text" id="primer_empleo_puesto" formControlName="primer_empleo_puesto"
+                            autocomplete="off" [attr.tabindex]="sinEmpleo ? -1 : 0" />
+                    </div>
+                    <span class="field-error"
+                        *ngIf="!sinEmpleo && f['primer_empleo_puesto'].invalid && f['primer_empleo_puesto'].touched">
+                        Escribe el puesto que ocupabas (máximo 150 caracteres).
+                    </span>
+                </div>
+
+                <!-- ── Bloque de EMPRENDIMIENTO (siempre activo) ── -->
+
+                <!-- P9 · Emprendimiento -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">9</span>
+                        <div class="q-text">¿Has iniciado un negocio, empresa o proyecto propio, aunque no sea tu
+                            actividad principal? <span class="req">*</span>
+                            <span class="q-note">Selecciona únicamente una opción</span>
+                        </div>
+                    </div>
+                    <div class="radio-group" role="radiogroup">
+                        <div class="radio-option">
+                            <input type="radio" id="emp-tiene-si" formControlName="emp_tiene" value="si" />
+                            <label for="emp-tiene-si">Sí</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="emp-tiene-no" formControlName="emp_tiene" value="no" />
+                            <label for="emp-tiene-no">No</label>
+                        </div>
+                    </div>
+                    <span class="field-error" *ngIf="f['emp_tiene'].invalid && f['emp_tiene'].touched">
+                        Selecciona una opción.
+                    </span>
+
+                    <!-- Bloque condicional: solo si responde Sí -->
+                    <div class="lengua-wrap" *ngIf="emprendio">
+                        <div class="subcampo">
+                            <label class="lengua-label" for="emp_nombre">Nombre del negocio o proyecto
+                                <span class="req">*</span></label>
+                            <div class="field-wrap">
+                                <input type="text" id="emp_nombre" formControlName="emp_nombre" autocomplete="off" />
+                            </div>
+                            <span class="field-error" *ngIf="f['emp_nombre'].invalid && f['emp_nombre'].touched">
+                                Escribe el nombre del negocio o proyecto (máximo 150 caracteres).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <label class="lengua-label" for="emp_giro">Giro o actividad
+                                <span class="req">*</span></label>
+                            <div class="field-wrap">
+                                <input type="text" id="emp_giro" formControlName="emp_giro"
+                                    placeholder="Ej. Servicios de software" autocomplete="off" />
+                            </div>
+                            <span class="field-error" *ngIf="f['emp_giro'].invalid && f['emp_giro'].touched">
+                                Escribe el giro o actividad (máximo 150 caracteres).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <label class="lengua-label" for="emp_anio">Año de inicio
+                                <span class="q-note">Opcional</span>
+                            </label>
+                            <div class="field-wrap">
+                                <input type="number" id="emp_anio" formControlName="emp_anio" placeholder="Ej. 2022"
+                                    min="1950" [max]="currentYear" step="1" />
+                            </div>
+                            <span class="field-error" *ngIf="f['emp_anio'].invalid && f['emp_anio'].touched">
+                                Ingresa un año válido (1950–{{ currentYear }}).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <div class="lengua-label">¿Sigue operando? <span class="req">*</span></div>
+                            <div class="radio-group" role="radiogroup">
+                                <div class="radio-option">
+                                    <input type="radio" id="emp-sigue-si" formControlName="emp_sigue" value="si" />
+                                    <label for="emp-sigue-si">Sí</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="emp-sigue-no" formControlName="emp_sigue" value="no" />
+                                    <label for="emp-sigue-no">No</label>
+                                </div>
+                            </div>
+                            <span class="field-error" *ngIf="f['emp_sigue'].invalid && f['emp_sigue'].touched">
+                                Selecciona una opción.
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <div class="lengua-label">¿Cuántas personas emplea?
+                                <span class="q-note">Opcional</span>
+                            </div>
+                            <div class="radio-group" role="radiogroup">
+                                <div class="radio-option" *ngFor="let r of rangosEmpleados">
+                                    <input type="radio" [id]="'emp-rango-' + r.clave" formControlName="emp_rango"
+                                        [value]="r.clave" />
+                                    <label [for]="'emp-rango-' + r.clave">{{ r.descripcion }}</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>3 de 4</span> &nbsp;·&nbsp; 34 preguntas en total</p>
+                <p class="progress-info">Sección <span>3 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
             </div>
         </div>
 
         <!-- DIVIDER -->
         <div class="section-divider">
             <span class="divider-line"></span>
-            <span class="divider-label">Última sección</span>
+            <span class="divider-label">Continúa con la siguiente sección</span>
             <span class="divider-line"></span>
         </div>
 
@@ -785,10 +997,90 @@
 
             <div class="questions-list">
 
-                <!-- P1 · Satisfacción -->
+                <!-- P1 · Proyectos sociales -->
                 <div class="question-item">
                     <div class="question-label">
                         <span class="q-num">1</span>
+                        <div class="q-text">¿Has participado en proyectos sociales, comunitarios o de desarrollo
+                            regional? <span class="req">*</span>
+                            <span class="q-note">Participación que ya hayas realizado, no intención a futuro</span>
+                        </div>
+                    </div>
+                    <div class="radio-group" role="radiogroup">
+                        <div class="radio-option">
+                            <input type="radio" id="proy-part-si" formControlName="proy_participa" value="si" />
+                            <label for="proy-part-si">Sí</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="proy-part-no" formControlName="proy_participa" value="no" />
+                            <label for="proy-part-no">No</label>
+                        </div>
+                    </div>
+                    <span class="field-error" *ngIf="f['proy_participa'].invalid && f['proy_participa'].touched">
+                        Selecciona una opción.
+                    </span>
+
+                    <!-- Bloque condicional: solo si responde Sí -->
+                    <div class="lengua-wrap" *ngIf="participoProyecto">
+                        <div class="subcampo">
+                            <label class="lengua-label" for="proy_nombre">Nombre o descripción breve del proyecto
+                                <span class="req">*</span></label>
+                            <div class="field-wrap">
+                                <input type="text" id="proy_nombre" formControlName="proy_nombre"
+                                    autocomplete="off" />
+                            </div>
+                            <span class="field-error" *ngIf="f['proy_nombre'].invalid && f['proy_nombre'].touched">
+                                Escribe el nombre o una breve descripción (máximo 150 caracteres).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <div class="lengua-label">Tipo de proyecto <span class="req">*</span></div>
+                            <div class="radio-group radio-group--grid3" role="radiogroup">
+                                <div class="radio-option" *ngFor="let t of tiposProyectoSocial">
+                                    <input type="radio" [id]="'proy-tipo-' + t.clave" formControlName="proy_tipo"
+                                        [value]="t.clave" />
+                                    <label [for]="'proy-tipo-' + t.clave">{{ t.descripcion }}</label>
+                                </div>
+                            </div>
+                            <span class="field-error" *ngIf="f['proy_tipo'].invalid && f['proy_tipo'].touched">
+                                Selecciona el tipo de proyecto.
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <label class="lengua-label" for="proy_anio">Año
+                                <span class="q-note">Opcional</span>
+                            </label>
+                            <div class="field-wrap">
+                                <input type="number" id="proy_anio" formControlName="proy_anio" placeholder="Ej. 2022"
+                                    min="1950" [max]="currentYear" step="1" />
+                            </div>
+                            <span class="field-error" *ngIf="f['proy_anio'].invalid && f['proy_anio'].touched">
+                                Ingresa un año válido (1950–{{ currentYear }}).
+                            </span>
+                        </div>
+
+                        <div class="subcampo">
+                            <label class="lengua-label" for="proy_organizacion">Organización
+                                <span class="q-note">Opcional</span>
+                            </label>
+                            <div class="field-wrap">
+                                <input type="text" id="proy_organizacion" formControlName="proy_organizacion"
+                                    autocomplete="off" />
+                            </div>
+                            <span class="field-error"
+                                *ngIf="f['proy_organizacion'].invalid && f['proy_organizacion'].touched">
+                                La organización no puede superar 150 caracteres.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- P2 · Satisfacción -->
+                <div class="question-item">
+                    <div class="question-label">
+                        <span class="q-num">2</span>
                         <div class="q-text">Nivel de satisfacción con la formación académica recibida en el ITD
                             <span class="req">*</span>
                         </div>
@@ -810,10 +1102,10 @@
                     </span>
                 </div>
 
-                <!-- P2 · Autorizaciones -->
+                <!-- P3 · Autorizaciones -->
                 <div class="question-item">
                     <div class="question-label">
-                        <span class="q-num">2</span>
+                        <span class="q-num">3</span>
                         <div class="q-text">Autorización de Datos — Aviso de Privacidad <span class="req">*</span>
                             <span class="q-note">Selecciona al menos una opción</span>
                         </div>
@@ -843,7 +1135,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>4 de 5</span> &nbsp;·&nbsp; 34 preguntas en total</p>
+                <p class="progress-info">Sección <span>4 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
             </div>
 
         </div>
@@ -1001,7 +1293,7 @@
             </div>
 
             <div class="form-footer">
-                <p class="progress-info">Sección <span>5 de 5</span> &nbsp;·&nbsp; 34 preguntas en total</p>
+                <p class="progress-info">Sección <span>5 de 5</span> &nbsp;·&nbsp; 39 preguntas en total</p>
                 <button type="button" class="btn-submit" (click)="onSubmit()"
                     [disabled]="enviando || correoYaRegistrado">
                     <span *ngIf="!enviando">

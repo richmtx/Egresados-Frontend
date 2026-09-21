@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import {
   Carrera, Genero, NivelIngles, SituacionLaboral, AntiguedadEmpleo, CertificacionVigente,
   CoincidenciaLaboral, DiscapacidadDominio, GradoDificultad, RespuestaAutoadscripcion,
+  NivelEstudio, EstadoEstudio, TipoProyectoSocial, RangoEmpleados,
 } from '../models/catalogos.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -52,5 +53,21 @@ export class CatalogosService {
 
   getRespuestasAutoadscripcion(): Observable<RespuestaAutoadscripcion[]> {
     return this.http.get<RespuestaAutoadscripcion[]>(`${this.API}/respuestas-autoadscripcion`);
+  }
+
+  getNivelesEstudio(): Observable<NivelEstudio[]> {
+    return this.http.get<NivelEstudio[]>(`${this.API}/niveles-estudio`);
+  }
+
+  getEstadosEstudio(): Observable<EstadoEstudio[]> {
+    return this.http.get<EstadoEstudio[]>(`${this.API}/estados-estudio`);
+  }
+
+  getTiposProyectoSocial(): Observable<TipoProyectoSocial[]> {
+    return this.http.get<TipoProyectoSocial[]>(`${this.API}/tipos-proyecto-social`);
+  }
+
+  getRangosEmpleados(): Observable<RangoEmpleados[]> {
+    return this.http.get<RangoEmpleados[]>(`${this.API}/rangos-empleados`);
   }
 }

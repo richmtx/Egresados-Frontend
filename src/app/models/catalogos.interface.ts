@@ -56,3 +56,34 @@ export interface RespuestaAutoadscripcion {
   descripcion: string;
   orden: number;
 }
+/** Niveles de estudios posteriores a la carrera (especialidad, maestría, etc.) */
+export interface NivelEstudio {
+  id_nivel_estudio: number;
+  clave: string;
+  descripcion: string;
+  orden: number;
+}
+
+/** Estado de los estudios posteriores: en curso, concluido, trunco */
+export interface EstadoEstudio {
+  id_estado_estudio: number;
+  clave: string;
+  descripcion: string;
+  orden: number;
+}
+
+/** Tipos de proyecto social, comunitario o de desarrollo regional */
+export interface TipoProyectoSocial {
+  id_tipo_proyecto: number;
+  clave: string;
+  descripcion: string;
+  orden: number;
+}
+
+/** Rangos de personas empleadas por un emprendimiento */
+export interface RangoEmpleados {
+  id_rango_empleados: number;
+  clave: string;
+  descripcion: string;
+  orden: number;
+}
