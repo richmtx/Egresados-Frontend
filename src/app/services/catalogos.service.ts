@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
-  Carrera, Genero, NivelIngles, SituacionLaboral, AntiguedadEmpleo, CertificacionVigente,
+  Carrera, Genero, NivelIngles, SituacionLaboral, AntiguedadEmpleo,
   CoincidenciaLaboral, DiscapacidadDominio, GradoDificultad, RespuestaAutoadscripcion,
   NivelEstudio, EstadoEstudio, TipoProyectoSocial, RangoEmpleados,
 } from '../models/catalogos.interface';
@@ -33,10 +33,6 @@ export class CatalogosService {
 
   getAntiguedades(): Observable<AntiguedadEmpleo[]> {
     return this.http.get<AntiguedadEmpleo[]>(`${this.API}/antiguedad`);
-  }
-
-  getCertificacionesVigentes(): Observable<CertificacionVigente[]> {
-    return this.http.get<CertificacionVigente[]>(`${this.API}/certificaciones-vigentes`);
   }
 
   getCoincidenciasLaborales(): Observable<CoincidenciaLaboral[]> {

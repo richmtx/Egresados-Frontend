@@ -23,11 +23,6 @@ export interface AntiguedadEmpleo {
   rango: string;
 }
 
-export interface CertificacionVigente {
-  id_certificacion_vigente: number;
-  respuesta: string;
-}
-
 export interface CoincidenciaLaboral {
   id_coincidencia: number;
   nivel: string;

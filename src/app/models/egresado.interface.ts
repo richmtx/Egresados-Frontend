@@ -55,7 +55,6 @@ export interface CreateEgresadoEtapa1 {
   periodo_ingreso: string;
   anio_egreso: number;
   estatus_titulacion: string;
-  certificacion_vigente?: string;   // ya no se usa; el backend lo acepta opcional
   estudios?: EstudioPosterior[];
   nivel_ingles: string;
 
