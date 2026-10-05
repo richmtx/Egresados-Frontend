@@ -83,6 +83,13 @@ const VERSION_BORRADOR = 1;
 const VIGENCIA_BORRADOR_MS = 7 * 24 * 60 * 60 * 1000;
 const ESPERA_GUARDADO_MS = 800;
 
+// Límites de año del formulario. DEBEN coincidir con
+// src/common/constants/limites-anio.ts del proyecto egresados-apis:
+// si aquí se permite algo que allá no, el egresado captura y el backend
+// le responde 400 sin que entienda por qué.
+const ANIO_INGRESO_MIN = 1955;
+const ANIO_EGRESO_MIN = 1960;
+
 // Sección 5 (datos sensibles): nunca se serializa ni se restaura.
 const CONTROLES_EXCLUIDOS_BORRADOR: readonly string[] = [
   'consintio_sensibles',
@@ -238,9 +245,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
       facebook: [''],
       instagram: [''],
       carrera: ['', Validators.required],
-      anio_ingreso: ['', [Validators.required, Validators.min(this.minAnioIngreso), Validators.max(this.currentYear)]],
+      anio_ingreso: ['', [Validators.required, Validators.min(ANIO_INGRESO_MIN), Validators.max(this.currentYear)]],
       periodo_ingreso: ['', Validators.required],
-      anio: ['', [Validators.required, Validators.min(1948), Validators.max(this.currentYear)]],
+      anio: ['', [Validators.required, Validators.min(ANIO_EGRESO_MIN), Validators.max(this.currentYear)]],
       titulacion: ['', Validators.required],
 
       // ── Estudios posteriores ──
@@ -308,8 +315,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
   // Año máximo dinámico — se actualiza solo cada vez que se carga la app
   currentYear: number = new Date().getFullYear();
 
-  // Año mínimo de ingreso. Pendiente de confirmar con Vinculación.
-  minAnioIngreso: number = 1948;
+  // Expuestos a la plantilla para los atributos min de los <input>.
+  minAnioIngreso: number = ANIO_INGRESO_MIN;
+  minAnioEgreso: number = ANIO_EGRESO_MIN;
 
   periodosIngreso: string[] = ['Enero - Junio', 'Agosto - Diciembre', 'No lo recuerdo'];
 
