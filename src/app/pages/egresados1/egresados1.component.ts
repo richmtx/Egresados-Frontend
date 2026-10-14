@@ -90,11 +90,23 @@ const ESPERA_GUARDADO_MS = 800;
 const ANIO_INGRESO_MIN = 1955;
 const ANIO_EGRESO_MIN = 1960;
 
+// Grados de severidad que se ofrecen al marcar un dominio de dificultad.
+// DEBE coincidir con GRADOS_DISCAPACIDAD_VALIDOS de egresados-apis: si se
+// manda otro grado la API responde 400. 'sin_dificultad' y 'no_declara'
+// ya no se usan: no tener dificultad es dejar la casilla sin marcar.
+const GRADOS_SEVERIDAD: readonly string[] = [
+  'poca_dificultad', 'mucha_dificultad', 'no_puedo',
+];
+
 // Sección 5 (datos sensibles): nunca se serializa ni se restaura.
+// El formulario se usa en equipos compartidos.
 const CONTROLES_EXCLUIDOS_BORRADOR: readonly string[] = [
   'consintio_sensibles',
   'disc_ver', 'disc_oir', 'disc_caminar', 'disc_recordar',
   'disc_autocuidado', 'disc_comunicar',
+  'disc_ver_marcado', 'disc_oir_marcado', 'disc_caminar_marcado', 'disc_recordar_marcado',
+  'disc_autocuidado_marcado', 'disc_comunicar_marcado',
+  'disc_otra', 'disc_otra_texto',
   'ident_indigena', 'ident_habla_lengua', 'ident_lengua', 'ident_afromexicano',
 ];
 
@@ -143,6 +155,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
   // Catálogos de la sección 5 (información complementaria)
   discapacidadDominios: DiscapacidadDominio[] = [];
   gradosDificultad: GradoDificultad[] = [];
+  gradosSeveridad: GradoDificultad[] = [];
   respuestasAutoadscripcion: RespuestaAutoadscripcion[] = [];
 
   // Catálogos de trayectoria profesional (fase 4)
@@ -206,6 +219,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
   private medioSub!: Subscription;
   private consentSub!: Subscription;
   private lenguaSub!: Subscription;
+  private discSubs: Subscription[] = [];
   private estudioSub!: Subscription;
   private emprendeSub!: Subscription;
   private proyectoSub!: Subscription;
@@ -295,7 +309,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
       // ── Sección 5 · Información complementaria (datos sensibles) ──
       // Todos arrancan vacíos y sin validadores. Los validadores se
-      // activan solo si el egresado marca el consentimiento.
+      // activan solo si el egresado marca el consentimiento (identidad) o
+      // una casilla de dificultad (su grado).
       consintio_sensibles: [false],
       disc_ver: [''],
       disc_oir: [''],
@@ -303,6 +318,14 @@ export class Egresados1Component implements OnInit, OnDestroy {
       disc_recordar: [''],
       disc_autocuidado: [''],
       disc_comunicar: [''],
+      disc_ver_marcado: [false],
+      disc_oir_marcado: [false],
+      disc_caminar_marcado: [false],
+      disc_recordar_marcado: [false],
+      disc_autocuidado_marcado: [false],
+      disc_comunicar_marcado: [false],
+      disc_otra: [false],
+      disc_otra_texto: [''],
       ident_indigena: [''],
       ident_habla_lengua: [''],
       ident_lengua: [''],
@@ -374,8 +397,9 @@ export class Egresados1Component implements OnInit, OnDestroy {
     'Otro',
   ];
 
-  // Mapea cada clave de dominio con su control en el formulario.
-  // El orden define cómo se numeran las preguntas en pantalla.
+  // Claves de dominio que tienen control en el formulario. Incluye
+  // autocuidado aunque hoy el catálogo no lo devuelva: si se reactiva en la
+  // base, el formulario funciona sin cambios. Lo que se pinta es el catálogo.
   readonly clavesDominio: string[] = [
     'ver', 'oir', 'caminar', 'recordar', 'autocuidado', 'comunicar',
   ];
@@ -412,6 +436,18 @@ export class Egresados1Component implements OnInit, OnDestroy {
 
   nombreControlDominio(clave: string): string {
     return 'disc_' + clave;
+  }
+
+  nombreControlMarcado(clave: string): string {
+    return 'disc_' + clave + '_marcado';
+  }
+
+  dominioMarcado(clave: string): boolean {
+    return this.form.get(this.nombreControlMarcado(clave))?.value === true;
+  }
+
+  get otraDificultadMarcada(): boolean {
+    return this.form.get('disc_otra')?.value === true;
   }
 
   get mensajeDuracion(): string {
@@ -494,6 +530,8 @@ export class Egresados1Component implements OnInit, OnDestroy {
         this.antiguedades = data.antiguedades;
         this.discapacidadDominios = data.discapacidadDominios;
         this.gradosDificultad = data.gradosDificultad;
+        this.gradosSeveridad = data.gradosDificultad
+          .filter(g => GRADOS_SEVERIDAD.includes(g.clave));
         this.respuestasAutoadscripcion = data.respuestasAutoadscripcion;
         this.nivelesEstudio = data.nivelesEstudio;
         this.estadosEstudio = data.estadosEstudio;
@@ -665,18 +703,16 @@ export class Egresados1Component implements OnInit, OnDestroy {
       });
 
     // Consentimiento de datos sensibles.
-    // Al marcarlo, las diez preguntas se vuelven obligatorias.
-    // Al desmarcarlo, se limpian por completo: no basta con ocultarlas,
-    // los valores tienen que desaparecer del formulario para que el
-    // payload no los arrastre.
-    const controlesSensibles = [
-      ...this.clavesDominio.map(c => 'disc_' + c),
-      'ident_indigena', 'ident_habla_lengua', 'ident_afromexicano',
-    ];
+    // Al marcarlo, solo las tres preguntas de identidad se vuelven
+    // obligatorias; la de dificultad no (dejarla sin marcar es responder
+    // "sin dificultad"). Al desmarcarlo, todo se limpia: no basta con
+    // ocultarlo, los valores tienen que desaparecer del formulario para que
+    // el payload no los arrastre.
+    const controlesIdentidad = ['ident_indigena', 'ident_habla_lengua', 'ident_afromexicano'];
 
     this.consentSub = this.form.get('consintio_sensibles')!.valueChanges
       .subscribe((consintio: boolean) => {
-        controlesSensibles.forEach(nombre => {
+        controlesIdentidad.forEach(nombre => {
           const ctrl = this.form.get(nombre)!;
           if (consintio) {
             ctrl.setValidators(Validators.required);
@@ -688,12 +724,42 @@ export class Egresados1Component implements OnInit, OnDestroy {
         });
 
         if (!consintio) {
-          const lengua = this.form.get('ident_lengua')!;
-          lengua.setValue('');
-          lengua.clearValidators();
-          lengua.updateValueAndValidity();
+          this.clavesDominio.forEach(clave => {
+            this.form.get(this.nombreControlMarcado(clave))!.setValue(false);
+            this.limpiarControl(this.nombreControlDominio(clave));
+          });
+          this.form.get('disc_otra')!.setValue(false);
+          this.limpiarControl('disc_otra_texto');
+          this.limpiarControl('ident_lengua');
         }
       });
+
+    // Cada casilla de dificultad hace obligatorio su grado; al desmarcarla
+    // se borra el grado para que no viaje en el payload.
+    this.clavesDominio.forEach(clave => {
+      this.discSubs.push(this.form.get(this.nombreControlMarcado(clave))!.valueChanges
+        .subscribe((marcado: boolean) => {
+          if (marcado) {
+            const grado = this.form.get(this.nombreControlDominio(clave))!;
+            grado.setValidators(Validators.required);
+            grado.updateValueAndValidity();
+          } else {
+            this.limpiarControl(this.nombreControlDominio(clave));
+          }
+        }));
+    });
+
+    // "Otra" despliega un texto obligatorio de hasta 200 caracteres.
+    this.discSubs.push(this.form.get('disc_otra')!.valueChanges
+      .subscribe((marcado: boolean) => {
+        if (marcado) {
+          const texto = this.form.get('disc_otra_texto')!;
+          texto.setValidators([textoRequerido(), Validators.maxLength(200)]);
+          texto.updateValueAndValidity();
+        } else {
+          this.limpiarControl('disc_otra_texto');
+        }
+      }));
 
     // La lengua indígena solo se pide (y se guarda) si habla alguna.
     this.lenguaSub = this.form.get('ident_habla_lengua')!.valueChanges
@@ -754,6 +820,14 @@ export class Egresados1Component implements OnInit, OnDestroy {
     ];
   }
 
+  // Vacía un control y le quita los validadores.
+  private limpiarControl(nombre: string): void {
+    const ctrl = this.form.get(nombre)!;
+    ctrl.setValue('');
+    ctrl.clearValidators();
+    ctrl.updateValueAndValidity();
+  }
+
   // Activa (pone validadores) o desactiva (limpia valor y validadores) un
   // bloque condicional. Mismo patrón que consentSub y lenguaSub.
   private alternarBloque(controles: Record<string, ValidatorFn[]>, activo: boolean): void {
@@ -777,6 +851,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     this.medioSub?.unsubscribe();
     this.consentSub?.unsubscribe();
     this.lenguaSub?.unsubscribe();
+    this.discSubs.forEach(s => s.unsubscribe());
     this.estudioSub?.unsubscribe();
     this.emprendeSub?.unsubscribe();
     this.proyectoSub?.unsubscribe();
@@ -1375,9 +1450,16 @@ export class Egresados1Component implements OnInit, OnDestroy {
       return {};
     }
 
+    // Solo los dominios marcados y con grado. Ninguno marcado = arreglo
+    // vacío = sin dificultades.
     const discapacidad: DiscapacidadRespuesta[] = this.clavesDominio
-      .map(clave => ({ dominio: clave, grado: v['disc_' + clave] }))
-      .filter(r => !!r.grado);
+      .filter(clave => v[this.nombreControlMarcado(clave)] === true)
+      .map(clave => ({ dominio: clave, grado: v[this.nombreControlDominio(clave)] }))
+      .filter(r => GRADOS_SEVERIDAD.includes(r.grado));
+
+    const discapacidadOtro = v.disc_otra === true
+      ? String(v.disc_otra_texto ?? '').trim()
+      : '';
 
     const identidad: IdentidadCultural = {
       indigena: v.ident_indigena,
@@ -1392,6 +1474,7 @@ export class Egresados1Component implements OnInit, OnDestroy {
     return {
       consintio_datos_sensibles: true,
       discapacidad,
+      ...(discapacidadOtro ? { discapacidad_otro: discapacidadOtro } : {}),
       identidad,
     };
   }

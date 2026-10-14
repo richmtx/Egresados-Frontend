@@ -82,7 +82,8 @@ export interface CreateEgresadoEtapa1 {
 
   // Sección 5 · Información complementaria (datos sensibles, opcionales)
   consintio_datos_sensibles?: boolean;
-  discapacidad?: DiscapacidadRespuesta[];
+  discapacidad?: DiscapacidadRespuesta[];   // solo los dominios marcados
+  discapacidad_otro?: string;                // texto de "Otra", recortado
   identidad?: IdentidadCultural;
 }
 

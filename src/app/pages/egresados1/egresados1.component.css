@@ -1649,3 +1649,24 @@ input.ng-invalid.ng-touched {
   letter-spacing: 0.03em;
   margin-top: 60px;
 }
+/* Pregunta de dificultad funcional: casilla + severidad colgada de ella */
+.dificultad-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.severidad-wrap {
+  margin: 8px 0 4px 18px;
+  padding-left: 16px;
+  border-left: 2px solid var(--guinda);
+  animation: severidad-entra 0.2s ease-out;
+}
+
+@keyframes severidad-entra {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .severidad-wrap { animation: none; }
+}

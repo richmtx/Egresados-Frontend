@@ -140,7 +140,8 @@
                     <div class="question-label">
                         <span class="q-num">5</span>
                         <div class="q-text">Perfil de Facebook
-                            <span class="q-note">Opcional · Solo para quienes deseen compartirlo</span>
+                            <span class="q-note">Opcional · Nos permite invitarte a la comunidad de egresados en
+                                Facebook</span>
                         </div>
                     </div>
                     <div class="field-wrap">
@@ -154,7 +155,8 @@
                     <div class="question-label">
                         <span class="q-num">6</span>
                         <div class="q-text">Perfil de Instagram
-                            <span class="q-note">Opcional · Solo para quienes deseen compartirlo</span>
+                            <span class="q-note">Opcional · Nos permite invitarte a la comunidad de egresados en
+                                Instagram</span>
                         </div>
                     </div>
                     <div class="field-wrap">
@@ -1204,36 +1206,70 @@
                 <!-- Bloque condicional: solo si consintió -->
                 <ng-container *ngIf="consintioSensibles">
 
-                    <!-- Encabezado del instrumento -->
+                    <!-- Dificultad funcional: una sola pregunta, opcional.
+                         No marcar nada = sin dificultades. Se pinta lo que
+                         devuelva el catálogo (ya viene filtrado). -->
                     <div class="question-item">
-                        <div class="instrumento-intro">
-                            Por su condición de salud, ¿tiene dificultad para…
-                        </div>
-                    </div>
-
-                    <!-- Las 6 preguntas de dificultad funcional -->
-                    <div class="question-item" *ngFor="let d of discapacidadDominios; let i = index">
-                        <div class="question-label">
-                            <span class="q-num">{{ i + 1 }}</span>
-                            <div class="q-text">{{ d.pregunta }} <span class="req">*</span></div>
-                        </div>
-                        <div class="radio-group radio-group--col">
-                            <div class="radio-option" *ngFor="let g of gradosDificultad">
-                                <input type="radio" [id]="'g-' + d.clave + '-' + g.clave"
-                                    [formControlName]="nombreControlDominio(d.clave)" [value]="g.clave" />
-                                <label [for]="'g-' + d.clave + '-' + g.clave">{{ g.descripcion }}</label>
+                        <div class="question-label" id="disc-pregunta">
+                            <span class="q-num">1</span>
+                            <div class="q-text">Por su condición de salud, ¿tiene dificultad para realizar alguna de
+                                estas actividades?
+                                <span class="q-note">Marque las que apliquen. Si no tiene dificultad en ninguna, deje
+                                    todo sin marcar.</span>
                             </div>
                         </div>
-                        <span class="field-error"
-                            *ngIf="f[nombreControlDominio(d.clave)].invalid && f[nombreControlDominio(d.clave)].touched">
-                            Selecciona una opción.
-                        </span>
+
+                        <div class="checkbox-group" role="group" aria-labelledby="disc-pregunta">
+                            <div class="dificultad-item" *ngFor="let d of discapacidadDominios">
+                                <div class="checkbox-option">
+                                    <input type="checkbox" [id]="'disc-' + d.clave"
+                                        [formControlName]="nombreControlMarcado(d.clave)" />
+                                    <label [for]="'disc-' + d.clave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>{{ d.pregunta }}</label>
+                                </div>
+
+                                <!-- Severidad: obligatoria una vez marcada la casilla -->
+                                <div class="field-wrap severidad-wrap" *ngIf="dominioMarcado(d.clave)"
+                                    role="radiogroup" [attr.aria-labelledby]="'sev-' + d.clave">
+                                    <span class="lengua-label" [id]="'sev-' + d.clave">¿Qué tanta dificultad?
+                                        <span class="req">*</span></span>
+                                    <div class="radio-group radio-group--grid3">
+                                        <div class="radio-option" *ngFor="let g of gradosSeveridad">
+                                            <input type="radio" [id]="'g-' + d.clave + '-' + g.clave"
+                                                [formControlName]="nombreControlDominio(d.clave)" [value]="g.clave" />
+                                            <label [for]="'g-' + d.clave + '-' + g.clave">{{ g.descripcion }}</label>
+                                        </div>
+                                    </div>
+                                    <span class="field-error" role="alert"
+                                        *ngIf="f[nombreControlDominio(d.clave)].invalid && f[nombreControlDominio(d.clave)].touched">
+                                        Indica qué tanta dificultad tienes.
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Otra: texto libre obligatorio al marcarla -->
+                            <div class="dificultad-item">
+                                <div class="checkbox-option">
+                                    <input type="checkbox" id="disc-otra" formControlName="disc_otra" />
+                                    <label for="disc-otra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Otra</label>
+                                </div>
+                                <div class="field-wrap severidad-wrap" *ngIf="otraDificultadMarcada">
+                                    <label class="lengua-label" for="disc_otra_texto">¿Cuál? <span
+                                            class="req">*</span></label>
+                                    <input type="text" id="disc_otra_texto" formControlName="disc_otra_texto"
+                                        maxlength="200" placeholder="Describe la actividad" autocomplete="off" />
+                                    <span class="field-error" role="alert"
+                                        *ngIf="f['disc_otra_texto'].invalid && f['disc_otra_texto'].touched">
+                                        Describe la dificultad (máximo 200 caracteres).
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Identidad cultural -->
                     <div class="question-item">
                         <div class="question-label">
-                            <span class="q-num">7</span>
+                            <span class="q-num">2</span>
                             <div class="q-text">De acuerdo con su cultura, ¿se considera indígena?
                                 <span class="req">*</span>
                             </div>
@@ -1252,7 +1288,7 @@
 
                     <div class="question-item">
                         <div class="question-label">
-                            <span class="q-num">8</span>
+                            <span class="q-num">3</span>
                             <div class="q-text">¿Habla alguna lengua indígena? <span class="req">*</span></div>
                         </div>
                         <div class="radio-group">
@@ -1280,7 +1316,7 @@
 
                     <div class="question-item">
                         <div class="question-label">
-                            <span class="q-num">9</span>
+                            <span class="q-num">4</span>
                             <div class="q-text">¿Se considera afromexicano/a, negro/a o afrodescendiente?
                                 <span class="req">*</span>
                             </div>
